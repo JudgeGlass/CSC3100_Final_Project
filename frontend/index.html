@@ -4,8 +4,148 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Resume Builder</title>
+
+  <link
+    href="css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <link
+    href="css/quill.snow.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    .quill-editor {
+      height: 160px;
+    }
+
+    #resumePreview {
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    #resumePreview h1 {
+      font-size: 1.7rem;
+      margin-bottom: 0.1rem;
+    }
+
+    #resumePreview h2 {
+      font-size: 1.1rem;
+      margin-top: 1.2rem;
+      margin-bottom: 0.4rem;
+      border-bottom: 1px solid var(--bs-border-color);
+      padding-bottom: 0.25rem;
+    }
+
+    #resumePreview ul {
+      margin-bottom: 0.5rem;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .card {
+        border: 0 !important;
+      }
+      .container-fluid {
+        padding: 0 !important;
+      }
+    }
+  </style>
 </head>
 <body>
-  <p>Hello world</p>
+  <div class="container-fluid py-3">
+    <div class="row align-items-center mb-3 no-print">
+      <div class="col">
+        <h1 class="h3 mb-0">Resume Builder</h1>
+        <div class="text-muted">Fill in your details and edit sections with rich text. The preview updates as you type.</div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12 col-lg-5 no-print">
+        <div class="card">
+          <div class="card-header fw-semibold">Editor</div>
+          <div class="card-body">
+            <div class="row g-2">
+              <div class="col-12">
+                <label class="form-label" for="fullName">Full name</label>
+                <input class="form-control" id="fullName" autocomplete="name" placeholder="Jane Doe" />
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="headline">Headline / Title</label>
+                <input class="form-control" id="headline" placeholder="Software Engineer" />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="email">Email</label>
+                <input class="form-control" id="email" type="email" autocomplete="email" placeholder="jane@email.com" />
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="phone">Phone</label>
+                <input class="form-control" id="phone" type="tel" autocomplete="tel" placeholder="(555) 555-5555" />
+              </div>
+
+              <div class="col-12">
+                <label class="form-label" for="location">Location</label>
+                <input class="form-control" id="location" autocomplete="address-level2" placeholder="City, State" />
+              </div>
+
+              <div class="col-12">
+                <label class="form-label" for="website">Website / Portfolio URL</label>
+                <input class="form-control" id="website" inputmode="url" placeholder="https://your-site.com" />
+              </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Summary</div>
+              <div id="summaryEditor" class="quill-editor"></div>
+            </div>
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Experience</div>
+              <div id="experienceEditor" class="quill-editor"></div>
+            </div>
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Education</div>
+              <div id="educationEditor" class="quill-editor"></div>
+            </div>
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Projects</div>
+              <div id="projectsEditor" class="quill-editor"></div>
+            </div>
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Skills</div>
+              <div id="skillsEditor" class="quill-editor"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-7">
+        <div class="card">
+          <div class="card-header fw-semibold">Preview</div>
+          <div class="card-body">
+            <div id="divResumePreview" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="libs/bootstrap.bundle.min.js"></script>
+  <script src="libs/quill.min.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
