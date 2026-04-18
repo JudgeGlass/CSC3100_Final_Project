@@ -15,3 +15,8 @@ app.listen(HTTP_PORT,() => {
 app.get('/test',(req,res,next) => {
     res.status(200).json({"message":"ok"})
 })
+
+app.post("/api/save/", (req, res) => {
+  const resumeContent = req.body.content;
+  console.log("Content: ", resumeContent);
+});

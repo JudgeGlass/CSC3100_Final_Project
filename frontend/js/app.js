@@ -1,3 +1,51 @@
+const inputs = {
+		fullName: document.getElementById("fullName"),
+		headline: document.getElementById("headline"),
+		email: document.getElementById("email"),
+		phone: document.getElementById("phone"),
+		location: document.getElementById("location"),
+		website: document.getElementById("website"),
+	};
+
+const toolbarOptions = [
+		[{ header: [1, 2, false] }],
+		["bold", "italic", "underline"],
+		[{ list: "ordered" }, { list: "bullet" }],
+		["link"],
+		["clean"],
+	];
+
+const btnSave = document.querySelector("#btnSave");
+btnSave.addEventListener("click", saveResume);
+
+const quills = {
+		summary: new Quill("#summaryEditor", {
+			theme: "snow",
+			modules: { toolbar: toolbarOptions },
+			placeholder: "A short professional summary…",
+		}),
+		experience: new Quill("#experienceEditor", {
+			theme: "snow",
+			modules: { toolbar: toolbarOptions },
+			placeholder: "Role, company, dates, and bullet points…",
+		}),
+		education: new Quill("#educationEditor", {
+			theme: "snow",
+			modules: { toolbar: toolbarOptions },
+			placeholder: "School, degree, dates, highlights…",
+		}),
+		projects: new Quill("#projectsEditor", {
+			theme: "snow",
+			modules: { toolbar: toolbarOptions },
+			placeholder: "Project name, impact, tech used…",
+		}),
+		skills: new Quill("#skillsEditor", {
+			theme: "snow",
+			modules: { toolbar: toolbarOptions },
+			placeholder: "Skills list or categories…",
+		}),
+	};
+
 function escapeHtml(text) {
 	return String(text)
 		.replaceAll("&", "&amp;")
@@ -57,57 +105,50 @@ function sectionHtml(title, innerHtml) {
 	return `<h2>${escapeHtml(title)}</h2>${content}`;
 }
 
+async function saveResume() {
+  console.log("Saving resume...");
+  const resumeData = {
+    fullName: inputs.fullName.value,
+    headline: inputs.headline.value,
+    email: inputs.email.value,
+    phone: inputs.phone.value,
+    location: inputs.location.value,
+    website: inputs.website.value,
+    summary: quills.summary.root.innerHTML,
+    experience: quills.experience.root.innerHTML,
+    education: quills.education.root.innerHTML,
+    projects: quills.projects.root.innerHTML,
+    skills: quills.skills.root.innerHTML
+  };
+
+  try {
+    const response = await fetch(`http://localhost:8000/api/save/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ content: resumeData })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("Resume saved successfully:", result);
+  } catch (error) {
+    console.error("Error saving resume:", error);
+  }
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
 	if (typeof Quill === "undefined") {
 		// Quill didn't load; nothing to initialize.
 		return;
 	}
 
-	const inputs = {
-		fullName: document.getElementById("fullName"),
-		headline: document.getElementById("headline"),
-		email: document.getElementById("email"),
-		phone: document.getElementById("phone"),
-		location: document.getElementById("location"),
-		website: document.getElementById("website"),
-	};
 	const previewEl = document.getElementById("divResumePreview");
-
-	const toolbarOptions = [
-		[{ header: [1, 2, false] }],
-		["bold", "italic", "underline"],
-		[{ list: "ordered" }, { list: "bullet" }],
-		["link"],
-		["clean"],
-	];
-
-	const quills = {
-		summary: new Quill("#summaryEditor", {
-			theme: "snow",
-			modules: { toolbar: toolbarOptions },
-			placeholder: "A short professional summary…",
-		}),
-		experience: new Quill("#experienceEditor", {
-			theme: "snow",
-			modules: { toolbar: toolbarOptions },
-			placeholder: "Role, company, dates, and bullet points…",
-		}),
-		education: new Quill("#educationEditor", {
-			theme: "snow",
-			modules: { toolbar: toolbarOptions },
-			placeholder: "School, degree, dates, highlights…",
-		}),
-		projects: new Quill("#projectsEditor", {
-			theme: "snow",
-			modules: { toolbar: toolbarOptions },
-			placeholder: "Project name, impact, tech used…",
-		}),
-		skills: new Quill("#skillsEditor", {
-			theme: "snow",
-			modules: { toolbar: toolbarOptions },
-			placeholder: "Skills list or categories…",
-		}),
-	};
 
 	function renderPreview() {
 		const fullName = (inputs.fullName?.value ?? "").trim();
