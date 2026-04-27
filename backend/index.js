@@ -31,6 +31,33 @@ const dbSessions = new sqlite3.Database('sessions.db', (err) => {
 
 app.listen(HTTP_PORT,() => {
 
+  function ensureResumeColumns() {
+    dbResumes.all("PRAGMA table_info(resumes)", (err, rows) => {
+      if (err) {
+        console.error("Error reading resumes table info:", err.message);
+        return;
+      }
+
+      const existing = new Set((rows || []).map((r) => r.name));
+      const toAdd = [
+        { name: "coverLetter", type: "TEXT" },
+        { name: "selectedSkills", type: "TEXT" },
+        { name: "selectedExperienceJobs", type: "TEXT" },
+      ];
+
+      for (const col of toAdd) {
+        if (existing.has(col.name)) continue;
+        dbResumes.run(`ALTER TABLE resumes ADD COLUMN ${col.name} ${col.type}`, (alterErr) => {
+          if (alterErr) {
+            console.error(`Error adding column ${col.name}:`, alterErr.message);
+          } else {
+            console.log(`Added column ${col.name} to resumes table`);
+          }
+        });
+      }
+    });
+  }
+
     const createTableSql = `
     CREATE TABLE IF NOT EXISTS resumes (
         username TEXT PRIMARY KEY NOT NULL,
@@ -44,7 +71,10 @@ app.listen(HTTP_PORT,() => {
         experience TEXT,
         education TEXT,
         projects TEXT,
-        skills TEXT
+      skills TEXT,
+      coverLetter TEXT,
+      selectedSkills TEXT,
+      selectedExperienceJobs TEXT
     )`;
 
     // Execute the SQL statement to create the table
@@ -53,6 +83,7 @@ app.listen(HTTP_PORT,() => {
             return console.error('Error creating table:', err.message);
         }
         console.log('Table created successfully');
+      ensureResumeColumns();
     });
 
 
@@ -101,8 +132,15 @@ app.post("/api/save/", (req, res) => {
   const resumeContent = req.body.content;
   console.log("Content: ", resumeContent);
 
-  const sql = `INSERT INTO resumes (username, fullName, headline, email, phone, location, website, summary, experience, education, projects, skills)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  const selectedSkills = Array.isArray(resumeContent.selectedSkills)
+    ? JSON.stringify(resumeContent.selectedSkills)
+    : resumeContent.selectedSkills ?? null;
+  const selectedExperienceJobs = Array.isArray(resumeContent.selectedExperienceJobs)
+    ? JSON.stringify(resumeContent.selectedExperienceJobs)
+    : resumeContent.selectedExperienceJobs ?? null;
+
+  const sql = `INSERT INTO resumes (username, fullName, headline, email, phone, location, website, summary, experience, education, projects, skills, coverLetter, selectedSkills, selectedExperienceJobs)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT(username) DO UPDATE SET
                    fullName=excluded.fullName,
                    headline=excluded.headline,
@@ -114,7 +152,10 @@ app.post("/api/save/", (req, res) => {
                    experience=excluded.experience,
                    education=excluded.education,
                    projects=excluded.projects,
-                   skills=excluded.skills`;
+                   skills=excluded.skills,
+				   coverLetter=excluded.coverLetter,
+				   selectedSkills=excluded.selectedSkills,
+				   selectedExperienceJobs=excluded.selectedExperienceJobs`;
 
   const params = [
     resumeContent.username,
@@ -128,7 +169,10 @@ app.post("/api/save/", (req, res) => {
     resumeContent.experience,
     resumeContent.education,
     resumeContent.projects,
-    resumeContent.skills
+    resumeContent.skills,
+	resumeContent.coverLetter,
+	selectedSkills,
+	selectedExperienceJobs
   ];
 
   dbResumes.run(sql, params, function(err) {

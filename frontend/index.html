@@ -20,17 +20,17 @@
       height: 160px;
     }
 
-    #resumePreview {
+    #divResumePreview {
       font-size: 0.95rem;
       line-height: 1.35;
     }
 
-    #resumePreview h1 {
+    #divResumePreview h1 {
       font-size: 1.7rem;
       margin-bottom: 0.1rem;
     }
 
-    #resumePreview h2 {
+    #divResumePreview h2 {
       font-size: 1.1rem;
       margin-top: 1.2rem;
       margin-bottom: 0.4rem;
@@ -38,7 +38,7 @@
       padding-bottom: 0.25rem;
     }
 
-    #resumePreview ul {
+    #divResumePreview ul {
       margin-bottom: 0.5rem;
     }
 
@@ -55,15 +55,24 @@
       .container-fluid {
         padding: 0 !important;
       }
+      .card-body {
+        padding: 0 !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container-fluid py-3">
     <div class="row align-items-center mb-3 no-print">
-      <div class="col">
-        <h1 class="h3 mb-0">Resume Builder</h1>
-        <div class="text-muted">Fill in your details and edit sections with rich text. The preview updates as you type.</div>
+      <div class="d-flex justify-content-between">
+        <div class="col">
+          <h1 class="h3 mb-0">Resume Builder</h1>
+          <div class="text-muted">Fill in your details and edit sections with rich text. The preview updates as you type.</div>
+        </div>
+        <div>
+          <label class="form-label" for="apiKeyInput">Gemini API Key</label>
+          <input class="form-control" id="apiKeyInput" type="password" placeholder="Enter your API key" />
+        </div>
       </div>
     </div>
 
@@ -144,18 +153,49 @@
               <div id="skillsEditor" class="quill-editor"></div>
             </div>
 
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <div class="fw-semibold">Cover Letter</div>
+                <button class="btn btn-sm btn-primary" id="btnGenerateCoverLetter">Enhance with AI</button>
+              </div>
+              <div id="coverLetterEditor" class="quill-editor"></div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="mb-3">
+              <div class="fw-semibold mb-1">Preview Selection</div>
+              <div class="text-muted small mb-2">
+                Pick which experience entries (jobs) and skills appear in the preview.
+              </div>
+
+              <div class="mb-3">
+                <div class="fw-semibold">Jobs (Experience)</div>
+                <div class="text-muted small mb-2">Tip: Use Heading 2 for each job title to separate entries.</div>
+                <div id="experienceSelection" class="border rounded p-2" style="max-height: 180px; overflow: auto;"></div>
+              </div>
+
+              <div class="mb-2">
+                <div class="fw-semibold">Skills</div>
+                <div id="skillsSelection" class="border rounded p-2" style="max-height: 180px; overflow: auto;"></div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
       <div class="col-12 col-lg-7">
         <div class="card">
-          <div class="card-header fw-semibold">
+          <div class="card-header fw-semibold no-print">
             <div class="d-flex justify-content-between">
               <h3>
                 Preview
               </h3>
-              <button class="btn btn-primary" id="btnSave">Save</button>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" id="btnPrint" type="button">Print</button>
+                <button class="btn btn-primary" id="btnSave" type="button">Save</button>
+              </div>
             </div>
           </div>
           
