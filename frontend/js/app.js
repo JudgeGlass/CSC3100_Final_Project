@@ -7,6 +7,20 @@ const inputs = {
 		website: document.getElementById("website"),
 	};
 
+const generateButtons = {
+		summary: document.getElementById("btnGenerateSummary"),
+		experience: document.getElementById("btnGenerateExperience"),
+		education: document.getElementById("btnGenerateEducation"),
+		projects: document.getElementById("btnGenerateProjects"),
+		skills: document.getElementById("btnGenerateSkills"),
+};
+
+generateButtons.summary.addEventListener("click", () => getSuggestion("summary"));
+generateButtons.experience.addEventListener("click", () => getSuggestion("experience"));
+generateButtons.education.addEventListener("click", () => getSuggestion("education"));
+generateButtons.projects.addEventListener("click", () => getSuggestion("projects"));
+generateButtons.skills.addEventListener("click", () => getSuggestion("skills"));
+
 const toolbarOptions = [
 		[{ header: [1, 2, false] }],
 		["bold", "italic", "underline"],
@@ -17,6 +31,8 @@ const toolbarOptions = [
 
 const btnSave = document.querySelector("#btnSave");
 btnSave.addEventListener("click", saveResume);
+
+const username = "hwilcox"; // Replace with dynamic username if needed
 
 const quills = {
 		summary: new Quill("#summaryEditor", {
@@ -44,7 +60,39 @@ const quills = {
 			modules: { toolbar: toolbarOptions },
 			placeholder: "Skills list or categories…",
 		}),
-	};
+};
+
+async function getSuggestion(section){
+
+}
+
+async function get_resume(){
+	
+	await fetch(`http://localhost:8000/api/resume/${encodeURIComponent(username)}`)
+		.then(response => {
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			return response.json();
+		})
+		.then(data => {
+			console.log("Resume data retrieved:", data);
+			inputs.fullName.value = data.fullName || "";
+			inputs.headline.value = data.headline || "";
+			inputs.email.value = data.email || "";
+			inputs.phone.value = data.phone || "";
+			inputs.location.value = data.location || "";
+			inputs.website.value = data.website || "";
+			quills.summary.root.innerHTML = data.summary || "<p><br></p>";
+			quills.experience.root.innerHTML = data.experience || "<p><br></p>";
+			quills.education.root.innerHTML = data.education || "<p><br></p>";
+			quills.projects.root.innerHTML = data.projects || "<p><br></p>";
+			quills.skills.root.innerHTML = data.skills || "<p><br></p>";
+		})
+		.catch(error => {
+			console.error("Error fetching resume:", error);
+		});
+}
 
 function escapeHtml(text) {
 	return String(text)
@@ -108,6 +156,7 @@ function sectionHtml(title, innerHtml) {
 async function saveResume() {
   console.log("Saving resume...");
   const resumeData = {
+		username: username,
     fullName: inputs.fullName.value,
     headline: inputs.headline.value,
     email: inputs.email.value,
@@ -142,15 +191,18 @@ async function saveResume() {
 }
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 	if (typeof Quill === "undefined") {
 		// Quill didn't load; nothing to initialize.
 		return;
 	}
 
+	await get_resume();
+
 	const previewEl = document.getElementById("divResumePreview");
 
 	function renderPreview() {
+		console.log("Rendering preview...");
 		const fullName = (inputs.fullName?.value ?? "").trim();
 		const headline = (inputs.headline?.value ?? "").trim();
 		const email = (inputs.email?.value ?? "").trim();
