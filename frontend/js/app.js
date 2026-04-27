@@ -24,7 +24,7 @@ generateButtons.skills.addEventListener("click", () => getSuggestion("skills"));
 generateButtons.coverLetter?.addEventListener("click", () => getSuggestion("coverLetter"));
 
 const toolbarOptions = [
-		[{ header: [1, 2, 3, false] }],
+		[{ header: [1, 2, 3, 4, 5, false] }],
 		["bold", "italic", "underline"],
 		[{ list: "ordered" }, { list: "bullet" }],
 		["link"],
