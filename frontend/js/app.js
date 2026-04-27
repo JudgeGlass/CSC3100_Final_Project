@@ -62,8 +62,96 @@ const quills = {
 		}),
 };
 
-async function getSuggestion(section){
+function setQuillHtml(quill, html) {
+	const safeHtml = sanitizeHtml(html);
+	const delta = quill.clipboard.convert(safeHtml);
+	quill.setContents(delta, "silent");
+}
 
+function disableGenerateButtons() {
+	for (const btn of Object.values(generateButtons)) {
+		btn.textContent = "Generating...";
+		btn.disabled = true;
+	}
+}
+
+function enableGenerateButtons() {
+	for (const btn of Object.values(generateButtons)) {
+		btn.textContent = "Enhance with AI";
+		btn.disabled = false;
+	}
+}
+
+async function getSuggestion(section){
+	disableGenerateButtons();
+
+	if(isQuillEmpty(quills[section])){
+		Swal.fire({
+			title: "Input Required",
+			text: "Please enter some content in the section before requesting AI suggestions.",
+			icon: "warning",
+		});
+		enableGenerateButtons();
+		return;
+	}
+
+
+	const body = {
+		username,
+		section,
+		content: quills[section].root.innerHTML
+	}
+
+	try {
+		const response = await fetch(`http://localhost:8000/api/suggest/`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(body)
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const result = await response.json();
+		console.log("Suggestion retrieved successfully:", result);
+		enableGenerateButtons();
+
+		Swal.fire({
+			title: "AI Suggestions",
+			html: "<div id='suggestion-content' class='quill-editor'></div>",
+			icon: "info",
+			confirmButtonText: "Apply Suggestions",
+			width: "75%",
+			showCancelButton: true,
+			didOpen: () => {
+				const suggestionContainer = document.getElementById("suggestion-content");
+				if (suggestionContainer) {
+					const tempQuill = new Quill(suggestionContainer, {
+						theme: "snow",
+						modules: { toolbar: false },
+						readOnly: true,
+					});
+					setQuillHtml(tempQuill, result.suggestion || "<p>No suggestions were generated. Please try again.</p>");
+				}
+			}
+		}).then((swalResult) => {
+			if (swalResult.isConfirmed && result.suggestion) {
+				setQuillHtml(quills[section], result.suggestion);
+				renderPreview();
+			}
+		});
+	} catch (error) {
+		console.error("Error retrieving suggestion:", error);
+		enableGenerateButtons();
+		Swal.fire({
+			title: "Error",
+			text: "Failed to retrieve AI suggestions. Please try again later.",
+			icon: "error",
+		});
+	}
 }
 
 async function get_resume(){
@@ -83,11 +171,11 @@ async function get_resume(){
 			inputs.phone.value = data.phone || "";
 			inputs.location.value = data.location || "";
 			inputs.website.value = data.website || "";
-			quills.summary.root.innerHTML = data.summary || "<p><br></p>";
-			quills.experience.root.innerHTML = data.experience || "<p><br></p>";
-			quills.education.root.innerHTML = data.education || "<p><br></p>";
-			quills.projects.root.innerHTML = data.projects || "<p><br></p>";
-			quills.skills.root.innerHTML = data.skills || "<p><br></p>";
+			setQuillHtml(quills.summary, data.summary || "<p><br></p>");
+			setQuillHtml(quills.experience, data.experience || "<p><br></p>");
+			setQuillHtml(quills.education, data.education || "<p><br></p>");
+			setQuillHtml(quills.projects, data.projects || "<p><br></p>");
+			setQuillHtml(quills.skills, data.skills || "<p><br></p>");
 		})
 		.catch(error => {
 			console.error("Error fetching resume:", error);
@@ -190,6 +278,63 @@ async function saveResume() {
   }
 }
 
+function renderPreview() {
+	const previewEl = document.getElementById("divResumePreview");
+	console.log("Rendering preview...");
+	const fullName = (inputs.fullName?.value ?? "").trim();
+	const headline = (inputs.headline?.value ?? "").trim();
+	const email = (inputs.email?.value ?? "").trim();
+	const phone = (inputs.phone?.value ?? "").trim();
+	const location = (inputs.location?.value ?? "").trim();
+	const website = (inputs.website?.value ?? "").trim();
+
+	const contactBits = [];
+	if (email) {
+		contactBits.push(
+			`<a href="mailto:${encodeURIComponent(email)}" class="text-decoration-none">${escapeHtml(email)}</a>`
+		);
+	}
+	if (phone) contactBits.push(escapeHtml(phone));
+	if (location) contactBits.push(escapeHtml(location));
+	if (website) {
+		const url = normalizeUrl(website);
+		contactBits.push(
+			`<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer" class="text-decoration-none">${escapeHtml(
+				website
+			)}</a>`
+		);
+	}
+
+	const headerHtml = `
+		<div class="mb-3">
+			<h1 class="mb-0">${escapeHtml(fullName || "Your Name")}</h1>
+			${headline ? `<div class="text-muted">${escapeHtml(headline)}</div>` : ""}
+			${
+				contactBits.length
+					? `<div class="small text-muted mt-2">${contactBits.join(" · ")}</div>`
+					: ""
+			}
+		</div>
+	`;
+
+	const summaryHtml = isQuillEmpty(quills.summary)
+		? ""
+		: sectionHtml("Summary", quills.summary.root.innerHTML);
+	const experienceHtml = isQuillEmpty(quills.experience)
+		? ""
+		: sectionHtml("Experience", quills.experience.root.innerHTML);
+	const educationHtml = isQuillEmpty(quills.education)
+		? ""
+		: sectionHtml("Education", quills.education.root.innerHTML);
+	const projectsHtml = isQuillEmpty(quills.projects)
+		? ""
+		: sectionHtml("Projects", quills.projects.root.innerHTML);
+	const skillsHtml = isQuillEmpty(quills.skills)
+		? ""
+		: sectionHtml("Skills", quills.skills.root.innerHTML);
+
+	previewEl.innerHTML = `${headerHtml}${summaryHtml}${experienceHtml}${educationHtml}${projectsHtml}${skillsHtml}`;
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
 	if (typeof Quill === "undefined") {
@@ -199,64 +344,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 	await get_resume();
 
-	const previewEl = document.getElementById("divResumePreview");
-
-	function renderPreview() {
-		console.log("Rendering preview...");
-		const fullName = (inputs.fullName?.value ?? "").trim();
-		const headline = (inputs.headline?.value ?? "").trim();
-		const email = (inputs.email?.value ?? "").trim();
-		const phone = (inputs.phone?.value ?? "").trim();
-		const location = (inputs.location?.value ?? "").trim();
-		const website = (inputs.website?.value ?? "").trim();
-
-		const contactBits = [];
-		if (email) {
-			contactBits.push(
-				`<a href="mailto:${encodeURIComponent(email)}" class="text-decoration-none">${escapeHtml(email)}</a>`
-			);
-		}
-		if (phone) contactBits.push(escapeHtml(phone));
-		if (location) contactBits.push(escapeHtml(location));
-		if (website) {
-			const url = normalizeUrl(website);
-			contactBits.push(
-				`<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer" class="text-decoration-none">${escapeHtml(
-					website
-				)}</a>`
-			);
-		}
-
-		const headerHtml = `
-			<div class="mb-3">
-				<h1 class="mb-0">${escapeHtml(fullName || "Your Name")}</h1>
-				${headline ? `<div class="text-muted">${escapeHtml(headline)}</div>` : ""}
-				${
-					contactBits.length
-						? `<div class="small text-muted mt-2">${contactBits.join(" · ")}</div>`
-						: ""
-				}
-			</div>
-		`;
-
-		const summaryHtml = isQuillEmpty(quills.summary)
-			? ""
-			: sectionHtml("Summary", quills.summary.root.innerHTML);
-		const experienceHtml = isQuillEmpty(quills.experience)
-			? ""
-			: sectionHtml("Experience", quills.experience.root.innerHTML);
-		const educationHtml = isQuillEmpty(quills.education)
-			? ""
-			: sectionHtml("Education", quills.education.root.innerHTML);
-		const projectsHtml = isQuillEmpty(quills.projects)
-			? ""
-			: sectionHtml("Projects", quills.projects.root.innerHTML);
-		const skillsHtml = isQuillEmpty(quills.skills)
-			? ""
-			: sectionHtml("Skills", quills.skills.root.innerHTML);
-
-		previewEl.innerHTML = `${headerHtml}${summaryHtml}${experienceHtml}${educationHtml}${projectsHtml}${skillsHtml}`;
-	}
 
 	for (const input of Object.values(inputs)) {
 		input?.addEventListener("input", renderPreview);
