@@ -24,9 +24,6 @@ var app = express()
 app.use(express.json())
 app.use(cors({ origin: true }))
 
-const genAI = new GoogleGenerativeAI(process.env.API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
-
 const dbResumes = new sqlite3.Database('resumes.db', (err) => {
     if(err){
         console.error("Error opening database:",err.message)
@@ -212,13 +209,20 @@ app.post("/api/suggest/", async (req, res) => {
 
     const resume_section = req.body?.section
     const resume_content = req.body?.content
+    const apiKey = req.body?.apiKey
+
+    if (!apiKey) {
+        return res.status(400).json({ error: "API key is required" });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
     
     if (!resume_section) {
         return res.status(400).json({ error: "Missing username or section in request body" });
     }
 
     const prompt = `Given the following resume content for the section "${resume_section}", provide suggestions to enhance it. The current content is: ${resume_content}. Please suggest improvements or additions that could make this section stronger and more compelling for potential employers. Focus on clarity, impact, and relevance to the job market. Make the entire response an HTML formatted response that can be directly inserted into the resume editor. Don't add any explanations or disclaimers, just provide the improved content.`;
-
 
     try {
         const result = await model.generateContent(prompt);

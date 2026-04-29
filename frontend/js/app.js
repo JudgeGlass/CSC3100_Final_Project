@@ -1,16 +1,13 @@
-
-
-
-
-
 const btnLogin = document.querySelector("#btnLogin");
 const btnRegister = document.querySelector("#btnRegister");
 const btnBackToLogin = document.querySelector("#btnBackToLogin");
 const btnRegisterSubmit = document.querySelector("#btnRegisterSubmit");
+const btnLogout = document.querySelector("#btnLogout");
 const txtUsernameLogin = document.querySelector("#txtUsernameLogin");
 const txtPasswordLogin = document.querySelector("#txtPasswordLogin");
 const txtUsernameRegister = document.querySelector("#txtRegisterUsername");
 const txtPasswordRegister = document.querySelector("#txtRegisterPassword");
+const txtApiKey = document.querySelector("#txtApiKey");
 const divLogin = document.querySelector("#divLogin");
 const divRegister = document.querySelector("#divRegister");
 const divMain = document.querySelector("#divMain");
@@ -24,8 +21,6 @@ btnBackToLogin?.addEventListener("click", async () => {
 	divRegister.classList.add("hidden");
 	divLogin.classList.remove("hidden");
 });
-
-
 
 async function login(username, password) {
 	try {
@@ -45,8 +40,8 @@ async function login(username, password) {
 		const result = await response.json();
 		console.log("Login successful:", result);
 		// Store the token and proceed to the main app
-		localStorage.setItem("jwtToken", result.token);
-		localStorage.setItem("username", username);
+		sessionStorage.setItem("jwtToken", result.token);
+		sessionStorage.setItem("username", username);
 		divLogin.classList.add("hidden");
 		divMain.classList.remove("hidden");
 		await renderPage();
@@ -92,6 +87,18 @@ btnLogin?.addEventListener("click", async () => {
 	await login(username, password);
 });
 
+txtPasswordLogin?.addEventListener("keypress", async (e) => {
+	if (e.key === "Enter") {
+		btnLogin.click();
+	}
+});
+
+txtUsernameLogin?.addEventListener("keypress", async (e) => {
+	if (e.key === "Enter") {
+		btnLogin.click();
+	}
+});
+
 btnRegisterSubmit?.addEventListener("click", async () => {
 	const username = txtUsernameRegister.value.trim();
 	const password = txtPasswordRegister.value.trim();
@@ -105,27 +112,50 @@ btnRegisterSubmit?.addEventListener("click", async () => {
 	btnBackToLogin.click();
 });
 
+btnLogout?.addEventListener("click", async () => {
+	await fetch(`http://localhost:8000/api/logout/`, {
+		method: "POST",
+		headers: {
+			"Authorization": `Bearer ${sessionStorage.getItem("jwtToken")}`
+		}
+	});
+
+	sessionStorage.removeItem("jwtToken");
+	sessionStorage.removeItem("username");
+	divMain.classList.add("hidden");
+	divLogin.classList.remove("hidden");
+});
+
+txtApiKey?.addEventListener("input", () => {
+	const apiKey = txtApiKey.value.trim();
+	if (apiKey) {
+		sessionStorage.setItem("geminiApiKey", apiKey);
+	} else {
+		sessionStorage.removeItem("geminiApiKey");
+	}
+});
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+document.addEventListener("DOMContentLoaded", async function(){
+    //....
+		const token = sessionStorage.getItem("jwtToken");
+		console.log("Checking for existing JWT token on page load:", token ? "Token found" : "No token found");
+		
+		if (token) {
+			try {
+				divLogin.classList.add("hidden");
+				divMain.classList.remove("hidden");
+				await renderPage();
+			} catch (error) {
+				console.error("Error rendering page:", error);
+				// If there's an error (e.g., token is invalid), clear it and show login
+				sessionStorage.removeItem("jwtToken");
+				sessionStorage.removeItem("username");
+				divMain.classList.add("hidden");
+				divLogin.classList.remove("hidden");
+			}
+		}
+});
 
 
 const inputs = {
@@ -265,6 +295,7 @@ async function getSuggestion(section){
 
 	const body = {
 		section,
+		apiKey: sessionStorage.getItem("geminiApiKey") || "",
 		content: quills[section].root.innerHTML
 	}
 
@@ -273,7 +304,7 @@ async function getSuggestion(section){
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				"Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`,
+				"Authorization": `Bearer ${sessionStorage.getItem("jwtToken") || ""}`,
 			},
 			body: JSON.stringify(body)
 		});
@@ -327,7 +358,7 @@ async function get_resume(){
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
-				"Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`,
+				"Authorization": `Bearer ${sessionStorage.getItem("jwtToken") || ""}`,
 			},
 		});
 
@@ -650,7 +681,7 @@ async function saveResume() {
 		.map((o) => o.label);
 
   const resumeData = {
-		username: localStorage.getItem("username") || "unknown_user",
+		username: sessionStorage.getItem("username") || "unknown_user",
     fullName: inputs.fullName.value,
     headline: inputs.headline.value,
     email: inputs.email.value,
@@ -672,7 +703,7 @@ async function saveResume() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-				"Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`,
+				"Authorization": `Bearer ${sessionStorage.getItem("jwtToken") || ""}`,
       },
       body: JSON.stringify({ content: resumeData })
     });
@@ -779,6 +810,8 @@ async function renderPage() {
 		// Quill didn't load; nothing to initialize.
 		return;
 	}
+
+	txtApiKey.value = sessionStorage.getItem("geminiApiKey") || "";
 
 	await get_resume();
 	syncSelectionsFromContent({ initialLoad: true });
