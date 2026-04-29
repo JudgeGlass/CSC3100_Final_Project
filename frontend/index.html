@@ -21,6 +21,14 @@
       height: 160px;
     }
 
+    /* Improve keyboard focus visibility for Quill toolbar controls. */
+    .ql-toolbar button:focus-visible,
+    .ql-toolbar .ql-picker-label:focus-visible,
+    .ql-toolbar .ql-picker-item:focus-visible {
+      outline: 2px solid var(--bs-primary);
+      outline-offset: 2px;
+    }
+
     #divResumePreview {
       font-size: 0.95rem;
       line-height: 1.35;
