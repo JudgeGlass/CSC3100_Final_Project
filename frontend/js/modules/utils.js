@@ -1,0 +1,110 @@
+;(function (global) {
+	global.ResumeApp = global.ResumeApp || {}
+	global.ResumeApp.utils = global.ResumeApp.utils || {}
+
+	function escapeHtml(text) {
+		return String(text)
+			.replaceAll("&", "&amp")
+			.replaceAll("<", "&lt")
+			.replaceAll(">", "&gt")
+			.replaceAll('"', "&quot")
+			.replaceAll("'", "&#039")
+	}
+
+	function sanitizeHtml(html) {
+		const template = document.createElement("template")
+		template.innerHTML = String(html ?? "")
+
+		const blockedTags = new Set(["script", "iframe", "object", "embed"])
+		const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT)
+
+		const nodesToRemove = []
+		while (walker.nextNode()) {
+			const el = walker.currentNode
+			if (blockedTags.has(el.tagName.toLowerCase())) {
+				nodesToRemove.push(el)
+				continue
+			}
+
+			for (const attr of Array.from(el.attributes)) {
+				const name = attr.name.toLowerCase()
+				const value = attr.value
+				if (name.startsWith("on")) {
+					el.removeAttribute(attr.name)
+					continue
+				}
+				if ((name === "href" || name === "src") && /^\s*javascript:/i.test(value)) {
+					el.removeAttribute(attr.name)
+				}
+			}
+		}
+		for (const el of nodesToRemove) el.remove()
+
+		return template.innerHTML
+	}
+
+	function normalizeUrl(url) {
+		const raw = String(url ?? "").trim()
+		if (!raw) return ""
+		if (/^https?:\/\//i.test(raw)) return raw
+		return `https://${raw}`
+	}
+
+	function isQuillEmpty(quill) {
+		return quill.getText().trim().length === 0
+	}
+
+	function safeJsonParse(value, fallback) {
+		try {
+			if (value == null) return fallback
+			if (typeof value === "object") return value
+			const parsed = JSON.parse(value)
+			return parsed ?? fallback
+		} catch {
+			return fallback
+		}
+	}
+
+	function normalizeText(text) {
+		return String(text ?? "")
+			.replace(/\s+/g, " ")
+			.trim()
+	}
+
+	function stableHash(input) {
+		// djb2
+		let hash = 5381
+		const str = String(input ?? "")
+		for (let i = 0; i < str.length; i++) {
+			hash = ((hash << 5) + hash) ^ str.charCodeAt(i)
+		}
+		return (hash >>> 0).toString(36)
+	}
+
+	function optionId(prefix, label, extra = "") {
+		return `${prefix}_${stableHash(`${label}|${extra}`)}`
+	}
+
+	function setQuillHtml(quill, html) {
+		const safeHtml = sanitizeHtml(html)
+		const delta = quill.clipboard.convert(safeHtml)
+		quill.setContents(delta, "silent")
+	}
+
+	function htmlToTemplate(html) {
+		const template = document.createElement("template")
+		template.innerHTML = sanitizeHtml(html)
+		return template
+	}
+
+	global.ResumeApp.utils.escapeHtml = escapeHtml
+	global.ResumeApp.utils.sanitizeHtml = sanitizeHtml
+	global.ResumeApp.utils.normalizeUrl = normalizeUrl
+	global.ResumeApp.utils.isQuillEmpty = isQuillEmpty
+	global.ResumeApp.utils.safeJsonParse = safeJsonParse
+	global.ResumeApp.utils.normalizeText = normalizeText
+	global.ResumeApp.utils.stableHash = stableHash
+	global.ResumeApp.utils.optionId = optionId
+	global.ResumeApp.utils.setQuillHtml = setQuillHtml
+	global.ResumeApp.utils.htmlToTemplate = htmlToTemplate
+})(window)
