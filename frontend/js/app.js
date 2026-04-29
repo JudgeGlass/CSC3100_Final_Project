@@ -1,3 +1,133 @@
+
+
+
+
+
+const btnLogin = document.querySelector("#btnLogin");
+const btnRegister = document.querySelector("#btnRegister");
+const btnBackToLogin = document.querySelector("#btnBackToLogin");
+const btnRegisterSubmit = document.querySelector("#btnRegisterSubmit");
+const txtUsernameLogin = document.querySelector("#txtUsernameLogin");
+const txtPasswordLogin = document.querySelector("#txtPasswordLogin");
+const txtUsernameRegister = document.querySelector("#txtRegisterUsername");
+const txtPasswordRegister = document.querySelector("#txtRegisterPassword");
+const divLogin = document.querySelector("#divLogin");
+const divRegister = document.querySelector("#divRegister");
+const divMain = document.querySelector("#divMain");
+
+btnRegister?.addEventListener("click", async () => {
+	divLogin.classList.add("hidden");
+	divRegister.classList.remove("hidden");
+});
+
+btnBackToLogin?.addEventListener("click", async () => {
+	divRegister.classList.add("hidden");
+	divLogin.classList.remove("hidden");
+});
+
+
+
+async function login(username, password) {
+	try {
+		console.log("Attempting login for user:", username);
+		const response = await fetch(`http://localhost:8000/api/login/`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({ username, password })
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const result = await response.json();
+		console.log("Login successful:", result);
+		// Store the token and proceed to the main app
+		localStorage.setItem("jwtToken", result.token);
+		localStorage.setItem("username", username);
+		divLogin.classList.add("hidden");
+		divMain.classList.remove("hidden");
+		await renderPage();
+	} catch (error) {
+		console.error("Error during login:", error);
+		alert("Login failed. Please check your credentials and try again.");
+	}
+}
+
+async function register(username, password) {
+	try {
+		console.log("Attempting registration for user:", username);
+		const response = await fetch(`http://localhost:8000/api/register/`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify({ username, password })
+		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const result = await response.json();
+		console.log("Registration successful:", result);
+		alert("Registration successful! Please log in with your new credentials.");
+		divRegister.classList.add("hidden");
+		divLogin.classList.remove("hidden");
+	} catch (error) {
+		console.error("Error during registration:", error);
+		alert("Registration failed. Please try again.");
+	}
+}
+
+btnLogin?.addEventListener("click", async () => {
+	const username = txtUsernameLogin.value.trim();
+	const password = txtPasswordLogin.value.trim();
+	if (!username || !password) {
+		alert("Please enter both username and password.");
+		return;
+	}
+	await login(username, password);
+});
+
+btnRegisterSubmit?.addEventListener("click", async () => {
+	const username = txtUsernameRegister.value.trim();
+	const password = txtPasswordRegister.value.trim();
+	if (!username || !password) {
+		alert("Please enter both username and password.");
+		return;
+	}
+	// For this example, we'll just log the registration info.
+	// In a real app, you'd send this to the backend to create the account.
+	await register(username, password);
+	btnBackToLogin.click();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 const inputs = {
 		fullName: document.getElementById("fullName"),
 		headline: document.getElementById("headline"),
@@ -40,8 +170,6 @@ btnPrint?.addEventListener("click", () => {
 	renderPreview();
 	window.print();
 });
-
-const username = "hwilcox"; // Replace with dynamic username if needed
 
 const quills = {
 		summary: new Quill("#summaryEditor", {
@@ -136,7 +264,6 @@ async function getSuggestion(section){
 
 
 	const body = {
-		username,
 		section,
 		content: quills[section].root.innerHTML
 	}
@@ -145,7 +272,8 @@ async function getSuggestion(section){
 		const response = await fetch(`http://localhost:8000/api/suggest/`, {
 			method: "POST",
 			headers: {
-				"Content-Type": "application/json"
+				"Content-Type": "application/json",
+				"Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`,
 			},
 			body: JSON.stringify(body)
 		});
@@ -195,7 +323,13 @@ async function getSuggestion(section){
 
 async function get_resume(){
 	
-	await fetch(`http://localhost:8000/api/resume/${encodeURIComponent(username)}`)
+	await fetch(`http://localhost:8000/api/resume/`, {
+		method: "GET",
+		headers: {
+			"Content-Type": "application/json",
+			"Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`,
+		},
+	})
 		.then(response => {
 			if (!response.ok) {
 				throw new Error(`HTTP error! status: ${response.status}`);
@@ -510,7 +644,7 @@ async function saveResume() {
 		.map((o) => o.label);
 
   const resumeData = {
-		username: username,
+		username: localStorage.getItem("username") || "unknown_user",
     fullName: inputs.fullName.value,
     headline: inputs.headline.value,
     email: inputs.email.value,
@@ -531,7 +665,8 @@ async function saveResume() {
     const response = await fetch(`http://localhost:8000/api/save/`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+				"Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`,
       },
       body: JSON.stringify({ content: resumeData })
     });
@@ -633,7 +768,7 @@ function renderPreview() {
 	previewEl.innerHTML = `${headerHtml}${coverLetterHtml}${summaryHtml}${experienceHtml}${educationHtml}${projectsHtml}${skillsHtml}`;
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+async function renderPage() {
 	if (typeof Quill === "undefined") {
 		// Quill didn't load; nothing to initialize.
 		return;
@@ -656,4 +791,4 @@ document.addEventListener("DOMContentLoaded", async () => {
 	}
 
 	renderPreview();
-});
+};

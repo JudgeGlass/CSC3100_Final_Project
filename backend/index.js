@@ -2,6 +2,19 @@ const express = require('express')
 const sqlite3 = require('sqlite3').verbose()
 const cors = require("cors")
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const { hashPassword, comparePassword, generateToken, verifyToken } = require("./auth");
+const {
+    initializeDatabase,
+    registerUser,
+    getUserPasswordHash,
+    updateUserToken,
+    getUserToken,
+    verifyUserExists,
+    revokeToken,
+    saveResume
+} = require("./db");
+
 require('dotenv').config()
 
 const HTTP_PORT = 8000
@@ -21,71 +34,16 @@ const dbResumes = new sqlite3.Database('resumes.db', (err) => {
     }
 })
 
-const dbSessions = new sqlite3.Database('sessions.db', (err) => {
+const dbAccounts = new sqlite3.Database('accounts.db', (err) => {
     if(err){
         console.error("Error opening database:",err.message)
     } else {
-        console.log("Connected to sessions.db")
+        console.log("Connected to accounts.db")
     }
 })
 
 app.listen(HTTP_PORT,() => {
-
-  function ensureResumeColumns() {
-    dbResumes.all("PRAGMA table_info(resumes)", (err, rows) => {
-      if (err) {
-        console.error("Error reading resumes table info:", err.message);
-        return;
-      }
-
-      const existing = new Set((rows || []).map((r) => r.name));
-      const toAdd = [
-        { name: "coverLetter", type: "TEXT" },
-        { name: "selectedSkills", type: "TEXT" },
-        { name: "selectedExperienceJobs", type: "TEXT" },
-      ];
-
-      for (const col of toAdd) {
-        if (existing.has(col.name)) continue;
-        dbResumes.run(`ALTER TABLE resumes ADD COLUMN ${col.name} ${col.type}`, (alterErr) => {
-          if (alterErr) {
-            console.error(`Error adding column ${col.name}:`, alterErr.message);
-          } else {
-            console.log(`Added column ${col.name} to resumes table`);
-          }
-        });
-      }
-    });
-  }
-
-    const createTableSql = `
-    CREATE TABLE IF NOT EXISTS resumes (
-        username TEXT PRIMARY KEY NOT NULL,
-        fullName TEXT,
-        headline TEXT,
-        email TEXT,
-        phone TEXT,
-        location TEXT,
-        website TEXT,
-        summary TEXT,
-        experience TEXT,
-        education TEXT,
-        projects TEXT,
-      skills TEXT,
-      coverLetter TEXT,
-      selectedSkills TEXT,
-      selectedExperienceJobs TEXT
-    )`;
-
-    // Execute the SQL statement to create the table
-    dbResumes.run(createTableSql, (err) => {
-        if (err) {
-            return console.error('Error creating table:', err.message);
-        }
-        console.log('Table created successfully');
-      ensureResumeColumns();
-    });
-
+    initializeDatabase(dbResumes, dbAccounts);
 
     console.log('Listening on',HTTP_PORT)
 })
@@ -112,86 +70,150 @@ Content:  {
 }
 */
 
-app.get("/api/resume/:username", (req, res) => {
-  const username = req.params.username;
-  const sql = `SELECT * FROM resumes WHERE username = ?`;
-  
-  dbResumes.get(sql, [username], (err, row) => {
-    if (err) {
-      console.error("Error retrieving resume:", err.message);
-      res.status(500).json({ error: "Failed to retrieve resume" });
-    } else if (row) {
-      res.status(200).json(row);
-    } else {
-      res.status(404).json({ error: "Resume not found" });
+app.post("/api/login/", async (req, res) => {
+    const username = req.body?.username;
+    const password = req.body?.password;
+    if (!username) {
+        return res.status(400).json({ error: "Username is required" });
     }
-  });
+
+    if (!password) {
+        return res.status(400).json({ error: "Password is required" });
+    }
+
+    if(!(await verifyUserExists(dbAccounts, username))){
+        return res.status(404).json({ error: "User not found" });
+    }
+
+    const passwordHash = await getUserPasswordHash(dbAccounts, username);
+
+    if (!passwordHash) {
+        return res.status(500).json({ error: "Failed to retrieve user information" });
+    }
+
+    if (!(await comparePassword(password, passwordHash))) {
+        return res.status(401).json({ error: "Invalid password" });
+    }
+
+    const token = generateToken(username);
+    res.status(200).json({ token });
 });
 
-app.post("/api/save/", (req, res) => {
-  const resumeContent = req.body.content;
-  console.log("Content: ", resumeContent);
-
-  const selectedSkills = Array.isArray(resumeContent.selectedSkills)
-    ? JSON.stringify(resumeContent.selectedSkills)
-    : resumeContent.selectedSkills ?? null;
-  const selectedExperienceJobs = Array.isArray(resumeContent.selectedExperienceJobs)
-    ? JSON.stringify(resumeContent.selectedExperienceJobs)
-    : resumeContent.selectedExperienceJobs ?? null;
-
-  const sql = `INSERT INTO resumes (username, fullName, headline, email, phone, location, website, summary, experience, education, projects, skills, coverLetter, selectedSkills, selectedExperienceJobs)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(username) DO UPDATE SET
-                   fullName=excluded.fullName,
-                   headline=excluded.headline,
-                   email=excluded.email,
-                   phone=excluded.phone,
-                   location=excluded.location,
-                   website=excluded.website,
-                   summary=excluded.summary,
-                   experience=excluded.experience,
-                   education=excluded.education,
-                   projects=excluded.projects,
-                   skills=excluded.skills,
-				   coverLetter=excluded.coverLetter,
-				   selectedSkills=excluded.selectedSkills,
-				   selectedExperienceJobs=excluded.selectedExperienceJobs`;
-
-  const params = [
-    resumeContent.username,
-    resumeContent.fullName,
-    resumeContent.headline,
-    resumeContent.email,
-    resumeContent.phone,
-    resumeContent.location,
-    resumeContent.website,
-    resumeContent.summary,
-    resumeContent.experience,
-    resumeContent.education,
-    resumeContent.projects,
-    resumeContent.skills,
-	resumeContent.coverLetter,
-	selectedSkills,
-	selectedExperienceJobs
-  ];
-
-  dbResumes.run(sql, params, function(err) {
-    if (err) {
-      console.error("Error saving resume:", err.message);
-      res.status(500).json({ error: "Failed to save resume" });
-    } else {
-      console.log("Resume saved successfully");
-      res.status(200).json({ message: "Resume saved successfully" });
+app.post("/api/register/", async (req, res) => {
+    const username = req.body?.username;
+    const password = req.body?.password;
+    if (!username) {
+        return res.status(400).json({ error: "Username is required" });
     }
-  });
+
+    if (!password) {
+        return res.status(400).json({ error: "Password is required" });
+    }
+    if(await verifyUserExists(dbAccounts, username)){
+        return res.status(409).json({ error: "Username already exists" });
+    }
+
+    const passwordHash = await hashPassword(password);
+    try {
+        await registerUser(dbAccounts, username, passwordHash);
+    } catch (err) {
+        console.error("Error registering user:", err.message);
+        return res.status(500).json({ error: "Failed to register user" });
+    }
+    // In a real application, you would save the user to the database here
+    // For this example, we will assume registration is always successful
+
+    const token = generateToken(username);
+    res.status(200).json({ token });
+});
+
+app.post("/api/logout/", async (req, res) => {
+    const jwtToken = req.headers?.authorization?.split(" ")[1]; // Expecting "Bearer <token>"
+
+    if(!jwtToken){
+        return res.status(401).json({ error: "Authorization header with JWT token is required" });
+    }
+
+    const verifiedToken = await verifyToken(jwtToken);
+    if(!verifiedToken){
+        return res.status(403).json({ error: "Invalid token for the specified username" });
+    }
+
+    const username = verifiedToken.username;
+
+    try {
+        await revokeToken(dbAccounts, username);
+        res.status(200).json({ message: "Logout successful" });
+    } catch (err) {
+        console.error("Error during logout:", err.message);
+        res.status(500).json({ error: "Failed to logout user" });
+    }
+});
+
+app.get("/api/resume/", async (req, res) => {
+    const jwtToken = req.headers?.authorization?.split(" ")[1]; // Expecting "Bearer <token>"
+
+    if(!jwtToken){
+        return res.status(401).json({ error: "Authorization header with JWT token is required" });
+    }
+
+    const verifiedToken = await verifyToken(jwtToken);
+    if(!verifiedToken){
+        return res.status(403).json({ error: "Invalid token for the specified username" });
+    }
+
+    const username = verifiedToken.username;
+
+    const sql = `SELECT * FROM resumes WHERE username = ?`;
+
+    dbResumes.get(sql, [username], (err, row) => {
+    if (err) {
+        console.error("Error retrieving resume:", err.message);
+        res.status(500).json({ error: "Failed to retrieve resume" });
+    } else if (row) {
+        res.status(200).json(row);
+    } else {
+        res.status(404).json({ error: "Resume not found" });
+    }
+    });
+});
+
+app.post("/api/save/", async (req, res) => {
+  const jwtToken = req.headers?.authorization?.split(" ")[1]; // Expecting "Bearer <token>"
+
+  if (!jwtToken) {
+    return res.status(401).json({ error: "Authorization header with JWT token is required" });
+  }
+
+  const verifiedToken = verifyToken(jwtToken);
+  if (!verifiedToken) {
+    return res.status(403).json({ error: "Invalid token for the specified username" });
+  }
+  const resumeContent = req.body.content;
+
+  if(await saveResume(dbResumes, resumeContent)){
+    res.status(200).json({ message: "Resume saved successfully" });
+  } else {
+    res.status(500).json({ error: "Failed to save resume" });
+  }
 });
 
 app.post("/api/suggest/", async (req, res) => {
-    const username = req.body?.username
+    const jwtToken = req.headers?.authorization?.split(" ")[1]; // Expecting "Bearer <token>"
+
+    if (!jwtToken) {
+        return res.status(401).json({ error: "Authorization header with JWT token is required" });
+    }
+
+    const verifiedToken = verifyToken(jwtToken);
+    if (!verifiedToken) {
+        return res.status(403).json({ error: "Invalid token for the specified username" });
+    }
+
     const resume_section = req.body?.section
     const resume_content = req.body?.content
     
-    if (!username || !resume_section) {
+    if (!resume_section) {
         return res.status(400).json({ error: "Missing username or section in request body" });
     }
 
