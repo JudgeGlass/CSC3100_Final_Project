@@ -137,7 +137,18 @@
 			}
 			try {
 				await register(username, password)
-				btnBackToLogin?.click()
+				await login(username, password)
+				showMain(divLogin, divRegister, divMain)
+				await onLoggedIn?.()
+				// Clear registration fields after successful registration and login
+				if (txtUsernameRegister) txtUsernameRegister.value = ""
+				if (txtPasswordRegister) txtPasswordRegister.value = ""
+				// Clear login fields as well
+				if (txtUsernameLogin) txtUsernameLogin.value = ""
+				if (txtPasswordLogin) txtPasswordLogin.value = ""
+				// Show success dialog after successful registration and login
+				await showSuccessDialog("Welcome!", `You have successfully registered and logged in as ${username}.`)
+				console.log("User registered and logged in successfully:", username)
 			} catch (error) {
 				showErrorDialog("Registration failed", "Please try again.", error)
 			}
