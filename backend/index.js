@@ -12,7 +12,8 @@ const {
     getUserToken,
     verifyUserExists,
     revokeToken,
-    saveResume
+    saveResume,
+    getResume
 } = require("./db");
 
 require('dotenv').config()
@@ -164,18 +165,17 @@ app.get("/api/resume/", async (req, res) => {
 
     const username = verifiedToken.username;
 
-    const sql = `SELECT * FROM resumes WHERE username = ?`;
-
-    dbResumes.get(sql, [username], (err, row) => {
-    if (err) {
-        console.error("Error retrieving resume:", err.message);
-        res.status(500).json({ error: "Failed to retrieve resume" });
-    } else if (row) {
-        res.status(200).json(row);
+    if(await verifyUserExists(dbAccounts, username)){
+        try {
+            const resumeData = await getResume(dbResumes, username);
+            res.status(200).json({ resume: resumeData });
+        } catch (err) {
+            console.error("Error retrieving resume:", err.message);
+            res.status(500).json({ error: "Failed to retrieve resume" });
+        }
     } else {
-        res.status(404).json({ error: "Resume not found" });
+        res.status(404).json({ error: "User not found" });
     }
-    });
 });
 
 app.post("/api/save/", async (req, res) => {

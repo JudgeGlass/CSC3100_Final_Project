@@ -322,41 +322,47 @@ async function getSuggestion(section){
 }
 
 async function get_resume(){
-	
-	await fetch(`http://localhost:8000/api/resume/`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-			"Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`,
-		},
-	})
-		.then(response => {
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-			return response.json();
-		})
-		.then(data => {
-			console.log("Resume data retrieved:", data);
-			inputs.fullName.value = data.fullName || "";
-			inputs.headline.value = data.headline || "";
-			inputs.email.value = data.email || "";
-			inputs.phone.value = data.phone || "";
-			inputs.location.value = data.location || "";
-			inputs.website.value = data.website || "";
-			setQuillHtml(quills.summary, data.summary || "<p><br></p>");
-			setQuillHtml(quills.experience, data.experience || "<p><br></p>");
-			setQuillHtml(quills.education, data.education || "<p><br></p>");
-			setQuillHtml(quills.projects, data.projects || "<p><br></p>");
-			setQuillHtml(quills.skills, data.skills || "<p><br></p>");
-			setQuillHtml(quills.coverLetter, data.coverLetter || "<p><br></p>");
-
-			loadedSelections.experienceLabels = safeJsonParse(data.selectedExperienceJobs, null);
-			loadedSelections.skillLabels = safeJsonParse(data.selectedSkills, null);
-		})
-		.catch(error => {
-			console.error("Error fetching resume:", error);
+	try {
+		const response = await fetch(`http://localhost:8000/api/resume/`, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+				"Authorization": `Bearer ${localStorage.getItem("jwtToken") || ""}`,
+			},
 		});
+
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
+		const data = await response.json();
+		console.log("Resume data retrieved:", data);
+
+		// Backend returns: { resume: { ...fields } }
+		const resume = data?.resume ?? null;
+		if (!resume) {
+			console.log("No saved resume found for this user yet.");
+			return;
+		}
+
+		inputs.fullName.value = resume.fullName || "";
+		inputs.headline.value = resume.headline || "";
+		inputs.email.value = resume.email || "";
+		inputs.phone.value = resume.phone || "";
+		inputs.location.value = resume.location || "";
+		inputs.website.value = resume.website || "";
+		setQuillHtml(quills.summary, resume.summary || "<p><br></p>");
+		setQuillHtml(quills.experience, resume.experience || "<p><br></p>");
+		setQuillHtml(quills.education, resume.education || "<p><br></p>");
+		setQuillHtml(quills.projects, resume.projects || "<p><br></p>");
+		setQuillHtml(quills.skills, resume.skills || "<p><br></p>");
+		setQuillHtml(quills.coverLetter, resume.coverLetter || "<p><br></p>");
+
+		loadedSelections.experienceLabels = safeJsonParse(resume.selectedExperienceJobs, null);
+		loadedSelections.skillLabels = safeJsonParse(resume.selectedSkills, null);
+	} catch (error) {
+		console.error("Error fetching resume:", error);
+	}
 }
 
 function escapeHtml(text) {

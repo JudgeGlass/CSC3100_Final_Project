@@ -220,6 +220,38 @@ function saveResume(dbResumes, resumeContent) {
   });
 }
 
+function getResume(dbResumes, username) {
+  const sql = `SELECT * FROM resumes WHERE username = ?`;
+  return new Promise((resolve, reject) => {
+    dbResumes.get(sql, [username], (err, row) => {
+      if (err) {
+        reject(err);
+      } else if (!row) {
+        resolve(null);
+      } else {
+        // Parse JSON fields back into arrays
+        if (row.selectedSkills) {
+          try {
+            row.selectedSkills = JSON.parse(row.selectedSkills);
+          } catch (e) {
+            console.error("Error parsing selectedSkills:", e);
+            row.selectedSkills = [];
+          }
+        }
+        if (row.selectedExperienceJobs) {
+          try {
+            row.selectedExperienceJobs = JSON.parse(row.selectedExperienceJobs);
+          } catch (e) {
+            console.error("Error parsing selectedExperienceJobs:", e);
+            row.selectedExperienceJobs = [];
+          }
+        }
+        resolve(row);
+      }
+    });
+  });
+}
+
 module.exports = {
     initializeDatabase,
     registerUser,
@@ -228,5 +260,6 @@ module.exports = {
     getUserToken,
     verifyUserExists,
     revokeToken,
-    saveResume
+    saveResume,
+    getResume
 };
