@@ -1,3 +1,5 @@
+const API_BASE_URL = "http://media.judgeglass.net:8000/api"
+
 const btnLogin = document.querySelector("#btnLogin")
 const btnRegister = document.querySelector("#btnRegister")
 const btnBackToLogin = document.querySelector("#btnBackToLogin")
@@ -50,7 +52,7 @@ btnBackToLogin?.addEventListener("click", async () => {
 async function login(username, password) {
 	try {
 		console.log("Attempting login for user:", username)
-		const response = await fetch(`http://localhost:8000/api/login/`, {
+		const response = await fetch(`${API_BASE_URL}/login/`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
@@ -82,7 +84,7 @@ async function login(username, password) {
 async function register(username, password) {
 	try {
 		console.log("Attempting registration for user:", username)
-		const response = await fetch(`http://localhost:8000/api/register/`, {
+		const response = await fetch(`${API_BASE_URL}/register/`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json"
@@ -144,7 +146,7 @@ btnRegisterSubmit?.addEventListener("click", async () => {
 
 btnLogout?.addEventListener("click", async () => {
 	try {
-		const response = await fetch(`http://localhost:8000/api/logout/`, {
+		const response = await fetch(`${API_BASE_URL}/logout/`, {
 			method: "POST",
 			headers: {
 				"Authorization": `Bearer ${sessionStorage.getItem("jwtToken")}`
@@ -157,6 +159,7 @@ btnLogout?.addEventListener("click", async () => {
 		showErrorDialog("Logout failed", "Could not reach the server to log out.", error)
 	}
 
+	clearInputs()
 	sessionStorage.removeItem("jwtToken")
 	sessionStorage.removeItem("username")
 	divMain.classList.add("hidden")
@@ -215,6 +218,18 @@ const generateButtons = {
 		projects: document.getElementById("btnGenerateProjects"),
 		skills: document.getElementById("btnGenerateSkills"),
 		coverLetter: document.getElementById("btnGenerateCoverLetter"),
+}
+
+function clearInputs() {
+	inputs.fullName.value = ""
+	inputs.headline.value = ""
+	inputs.email.value = ""
+	inputs.phone.value = ""
+	inputs.location.value = ""
+	inputs.website.value = ""
+	for (const quill of Object.values(quills)) {
+		if (quill) quill.setContents([{ insert: "\n" }], "silent")
+	}
 }
 
 generateButtons.summary.addEventListener("click", () => getSuggestion("summary"))
@@ -341,7 +356,7 @@ async function getSuggestion(section){
 	}
 
 	try {
-		const response = await fetch(`http://localhost:8000/api/suggest/`, {
+		const response = await fetch(`${API_BASE_URL}/suggest/`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -395,7 +410,7 @@ async function getSuggestion(section){
 
 async function get_resume(){
 	try {
-		const response = await fetch(`http://localhost:8000/api/resume/`, {
+		const response = await fetch(`${API_BASE_URL}/resume/`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",
@@ -744,7 +759,7 @@ async function saveResume() {
   }
 
   try {
-    const response = await fetch(`http://localhost:8000/api/save/`, {
+    const response = await fetch(`${API_BASE_URL}/save/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
