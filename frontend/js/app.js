@@ -338,34 +338,14 @@ function enhanceQuillAccessibility(quill, { label, editorIdPrefix } = {}) {
 	}
 
 	// Buttons present in your toolbarOptions.
-	const btnBold = setButtonA11y("button.ql-bold", "Bold", { "aria-keyshortcuts": "Control+B Meta+B" })
-	const btnItalic = setButtonA11y("button.ql-italic", "Italic", { "aria-keyshortcuts": "Control+I Meta+I" })
-	const btnUnderline = setButtonA11y("button.ql-underline", "Underline", { "aria-keyshortcuts": "Control+U Meta+U" })
-	const btnOrdered = setButtonA11y('button.ql-list[value="ordered"]', "Numbered list")
-	const btnBullet = setButtonA11y('button.ql-list[value="bullet"]', "Bulleted list")
+	setButtonA11y("button.ql-bold", "Bold", { "aria-keyshortcuts": "Control+B Meta+B" })
+	setButtonA11y("button.ql-italic", "Italic", { "aria-keyshortcuts": "Control+I Meta+I" })
+	setButtonA11y("button.ql-underline", "Underline", { "aria-keyshortcuts": "Control+U Meta+U" })
+	setButtonA11y('button.ql-list[value="ordered"]', "Numbered list")
+	setButtonA11y('button.ql-list[value="bullet"]', "Bulleted list")
 	setButtonA11y("button.ql-link", "Insert link")
 	setButtonA11y("button.ql-clean", "Remove formatting")
 	setSelectA11y("select.ql-header", "Heading level")
-
-	const syncPressedStates = () => {
-		// Quill throws sometimes if the editor is detached; just bail.
-		let fmt
-		try {
-			fmt = quill.getFormat?.() || {}
-		} catch {
-			return
-		}
-		if (btnBold) btnBold.setAttribute("aria-pressed", String(Boolean(fmt.bold)))
-		if (btnItalic) btnItalic.setAttribute("aria-pressed", String(Boolean(fmt.italic)))
-		if (btnUnderline) btnUnderline.setAttribute("aria-pressed", String(Boolean(fmt.underline)))
-		if (btnOrdered) btnOrdered.setAttribute("aria-pressed", String(fmt.list === "ordered"))
-		if (btnBullet) btnBullet.setAttribute("aria-pressed", String(fmt.list === "bullet"))
-	}
-
-	// Keep toggle buttons' pressed state in sync for screen readers.
-	quill.on?.("selection-change", syncPressedStates)
-	quill.on?.("editor-change", syncPressedStates)
-	syncPressedStates()
 }
 
 const quillSectionLabels = {
