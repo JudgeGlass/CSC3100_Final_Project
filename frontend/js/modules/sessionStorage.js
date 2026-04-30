@@ -1,3 +1,5 @@
+// [ Written entirely by me ]
+// Some basic helper functions to store things in session storage
 ;(function (global) {
 	global.ResumeApp = global.ResumeApp || {}
 	global.ResumeApp.session = global.ResumeApp.session || {}

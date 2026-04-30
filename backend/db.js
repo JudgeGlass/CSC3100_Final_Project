@@ -1,8 +1,12 @@
+// **** [ Entire file written by me* ] ****
+//      * except ensureResumeColumns() and part of saveResume() functions
+// Some helper functions for the DBs
+
 const sqlite3 = require('sqlite3').verbose()
 
-
+// Initializes the DBs for the resume and account data
 function initializeDatabase(dbResumes, dbAccounts) {
-  function ensureResumeColumns() {
+  function ensureResumeColumns() { // Ensures the resume DB has correct columns
       dbResumes.all("PRAGMA table_info(resumes)", (err, rows) => {
         if (err) {
           console.error("Error reading resumes table info:", err.message)
@@ -14,6 +18,10 @@ function initializeDatabase(dbResumes, dbAccounts) {
           { name: "coverLetter", type: "TEXT" },
           { name: "selectedSkills", type: "TEXT" },
           { name: "selectedExperienceJobs", type: "TEXT" },
+          { name: "experienceItems", type: "TEXT" },
+          { name: "skillItems", type: "TEXT" },
+          { name: "selectedExperienceIds", type: "TEXT" },
+          { name: "selectedSkillIds", type: "TEXT" },
         ]
   
         for (const col of toAdd) {
@@ -29,34 +37,40 @@ function initializeDatabase(dbResumes, dbAccounts) {
       })
     }
   
-      const createTableSql = `
-      CREATE TABLE IF NOT EXISTS resumes (
-          username TEXT PRIMARY KEY NOT NULL,
-          fullName TEXT,
-          headline TEXT,
-          email TEXT,
-          phone TEXT,
-          location TEXT,
-          website TEXT,
-          summary TEXT,
-          experience TEXT,
-          education TEXT,
-          projects TEXT,
-        skills TEXT,
-        coverLetter TEXT,
-        selectedSkills TEXT,
-        selectedExperienceJobs TEXT
-      )`
-  
-      // Execute the SQL statement to create the table
-      dbResumes.run(createTableSql, (err) => {
-          if (err) {
-              return console.error('Error creating table:', err.message)
-          }
-          console.log('Table created successfully')
-        ensureResumeColumns()
-      })
+    // SQL for creating resume table
+    const createTableSql = `
+    CREATE TABLE IF NOT EXISTS resumes (
+        username TEXT PRIMARY KEY NOT NULL,
+        fullName TEXT,
+        headline TEXT,
+        email TEXT,
+        phone TEXT,
+        location TEXT,
+        website TEXT,
+        summary TEXT,
+        experience TEXT,
+        education TEXT,
+        projects TEXT,
+      skills TEXT,
+      coverLetter TEXT,
+      selectedSkills TEXT,
+      selectedExperienceJobs TEXT,
+      experienceItems TEXT,
+      skillItems TEXT,
+      selectedExperienceIds TEXT,
+      selectedSkillIds TEXT
+    )`
 
+    // Execute the SQL statement to create the resume table
+    dbResumes.run(createTableSql, (err) => {
+        if (err) {
+            return console.error('Error creating table:', err.message)
+        }
+        console.log('Table created successfully')
+      ensureResumeColumns()
+    })
+
+  // SQL for creating accounts table
   const createAccountsTableSql = `
       CREATE TABLE IF NOT EXISTS accounts (
           username TEXT PRIMARY KEY NOT NULL,
@@ -64,6 +78,7 @@ function initializeDatabase(dbResumes, dbAccounts) {
           currentJWT TEXT
       )`
 
+  // Execute the SQL statement to create the account table
   dbAccounts.run(createAccountsTableSql, (err) => {
       if (err) {
           return console.error('Error creating accounts table:', err.message)
@@ -72,6 +87,7 @@ function initializeDatabase(dbResumes, dbAccounts) {
     })
 }
 
+// Inserts a new user into the account table
 function registerUser(dbAccounts, username, passwordHash) {
     return new Promise((resolve, reject) => {
         const sql = `INSERT INTO accounts (username, passwordHash, currentJWT) VALUES (?, ?, NULL)`
@@ -89,6 +105,7 @@ function registerUser(dbAccounts, username, passwordHash) {
     })
 }
 
+// Get the password hash from a given user
 function getUserPasswordHash(dbAccounts, username) {
     return new Promise((resolve, reject) => {
         const sql = `SELECT passwordHash FROM accounts WHERE username = ?`
@@ -104,6 +121,7 @@ function getUserPasswordHash(dbAccounts, username) {
     })
 }
 
+// Update the JWT for a given user
 function updateUserToken(dbAccounts, username, token) {
     return new Promise((resolve, reject) => {
         const sql = `UPDATE accounts SET currentJWT = ? WHERE username = ?`
@@ -119,6 +137,7 @@ function updateUserToken(dbAccounts, username, token) {
     })
 }
 
+// Get JWT for given user
 function getUserToken(dbAccounts, username) {
     return new Promise((resolve, reject) => {
         const sql = `SELECT currentJWT FROM accounts WHERE username = ?`
@@ -134,6 +153,7 @@ function getUserToken(dbAccounts, username) {
     })
 }
 
+// Check if user exists in table
 function verifyUserExists(dbAccounts, username) {
     return new Promise((resolve, reject) => {
         const sql = `SELECT 1 FROM accounts WHERE username = ?`
@@ -149,6 +169,7 @@ function verifyUserExists(dbAccounts, username) {
     })
 }
 
+// Remove JWT for given user
 function revokeToken(dbAccounts, username) {
     return new Promise((resolve, reject) => {
         const sql = `UPDATE accounts SET currentJWT = NULL WHERE username = ?`
@@ -164,7 +185,7 @@ function revokeToken(dbAccounts, username) {
     })
 }
 
-
+// Saves all the resume data in table
 function saveResume(dbResumes, resumeContent) {
   const selectedSkills = Array.isArray(resumeContent.selectedSkills)
     ? JSON.stringify(resumeContent.selectedSkills)
@@ -172,9 +193,22 @@ function saveResume(dbResumes, resumeContent) {
   const selectedExperienceJobs = Array.isArray(resumeContent.selectedExperienceJobs)
     ? JSON.stringify(resumeContent.selectedExperienceJobs)
     : resumeContent.selectedExperienceJobs ?? null
+  const experienceItems = Array.isArray(resumeContent.experienceItems)
+    ? JSON.stringify(resumeContent.experienceItems)
+    : resumeContent.experienceItems ?? null
+  const skillItems = Array.isArray(resumeContent.skillItems)
+    ? JSON.stringify(resumeContent.skillItems)
+    : resumeContent.skillItems ?? null
+  const selectedExperienceIds = Array.isArray(resumeContent.selectedExperienceIds)
+    ? JSON.stringify(resumeContent.selectedExperienceIds)
+    : resumeContent.selectedExperienceIds ?? null
+  const selectedSkillIds = Array.isArray(resumeContent.selectedSkillIds)
+    ? JSON.stringify(resumeContent.selectedSkillIds)
+    : resumeContent.selectedSkillIds ?? null
 
-  const sql = `INSERT INTO resumes (username, fullName, headline, email, phone, location, website, summary, experience, education, projects, skills, coverLetter, selectedSkills, selectedExperienceJobs)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  // This giant SQL query...
+  const sql = `INSERT INTO resumes (username, fullName, headline, email, phone, location, website, summary, experience, education, projects, skills, coverLetter, selectedSkills, selectedExperienceJobs, experienceItems, skillItems, selectedExperienceIds, selectedSkillIds)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT(username) DO UPDATE SET
                    fullName=excluded.fullName,
                    headline=excluded.headline,
@@ -189,7 +223,11 @@ function saveResume(dbResumes, resumeContent) {
                    skills=excluded.skills,
 				   coverLetter=excluded.coverLetter,
 				   selectedSkills=excluded.selectedSkills,
-				   selectedExperienceJobs=excluded.selectedExperienceJobs`
+           selectedExperienceJobs=excluded.selectedExperienceJobs,
+           experienceItems=excluded.experienceItems,
+           skillItems=excluded.skillItems,
+           selectedExperienceIds=excluded.selectedExperienceIds,
+           selectedSkillIds=excluded.selectedSkillIds`
 
   const params = [
     resumeContent.username,
@@ -206,7 +244,11 @@ function saveResume(dbResumes, resumeContent) {
     resumeContent.skills,
 	resumeContent.coverLetter,
 	selectedSkills,
-	selectedExperienceJobs
+  selectedExperienceJobs,
+  experienceItems,
+  skillItems,
+  selectedExperienceIds,
+  selectedSkillIds
   ]
 
   return new Promise((resolve, reject) => {
@@ -220,6 +262,7 @@ function saveResume(dbResumes, resumeContent) {
   })
 }
 
+// Get resume data for given user. Check if selected experience/skills is valid json and set empty if not
 function getResume(dbResumes, username) {
   const sql = `SELECT * FROM resumes WHERE username = ?`
   return new Promise((resolve, reject) => {
@@ -244,6 +287,38 @@ function getResume(dbResumes, username) {
           } catch (e) {
             console.error("Error parsing selectedExperienceJobs:", e)
             row.selectedExperienceJobs = []
+          }
+        }
+        if (row.experienceItems) {
+          try {
+            row.experienceItems = JSON.parse(row.experienceItems)
+          } catch (e) {
+            console.error("Error parsing experienceItems:", e)
+            row.experienceItems = []
+          }
+        }
+        if (row.skillItems) {
+          try {
+            row.skillItems = JSON.parse(row.skillItems)
+          } catch (e) {
+            console.error("Error parsing skillItems:", e)
+            row.skillItems = []
+          }
+        }
+        if (row.selectedExperienceIds) {
+          try {
+            row.selectedExperienceIds = JSON.parse(row.selectedExperienceIds)
+          } catch (e) {
+            console.error("Error parsing selectedExperienceIds:", e)
+            row.selectedExperienceIds = []
+          }
+        }
+        if (row.selectedSkillIds) {
+          try {
+            row.selectedSkillIds = JSON.parse(row.selectedSkillIds)
+          } catch (e) {
+            console.error("Error parsing selectedSkillIds:", e)
+            row.selectedSkillIds = []
           }
         }
         resolve(row)

@@ -1,22 +1,30 @@
+// [ PARTIALLY written by me ]
+// Functions that handle the preivew of the resume
 ;(function (global) {
 	global.ResumeApp = global.ResumeApp || {}
 	global.ResumeApp.preview = global.ResumeApp.preview || {}
 
+	// Get html sanitizer helpers from the utils module
 	const { escapeHtml, isQuillEmpty, normalizeUrl, sanitizeHtml } = global.ResumeApp.utils
 
+	// sectionHtml() [ Written entirely by me ]
+	// Creates the resume section (education, skills, etc) html
 	function sectionHtml(title, innerHtml) {
 		const sanitized = sanitizeHtml(innerHtml)
 		const content = sanitized.trim()
-		if (!content || content === "<p><br></p>") return ""
+		if (!content || content === "<p><br></p>") return "" // Return nothing if the section is empty
 		return `<h2>${escapeHtml(title)}</h2>${content}`
 	}
 
+	// createPreviewRenderer() [ Written entirely by me ]
+	// Creates the resume preivew
 	function createPreviewRenderer({ inputs, quills, selectionState }) {
 		return function renderPreview() {
-			const previewEl = document.getElementById("divResumePreview")
+			const previewEl = document.getElementById("divResumePreview") // Get preview div
 			if (!previewEl) return
 
 			console.log("Rendering preview...")
+			// Get basic info inputs
 			const fullName = (inputs.fullName?.value ?? "").trim()
 			const headline = (inputs.headline?.value ?? "").trim()
 			const email = (inputs.email?.value ?? "").trim()
@@ -24,6 +32,7 @@
 			const location = (inputs.location?.value ?? "").trim()
 			const website = (inputs.website?.value ?? "").trim()
 
+			// Create list of the contact info(s)
 			const contactBits = []
 			if (email) {
 				contactBits.push(
@@ -41,6 +50,7 @@
 				)
 			}
 
+			// Create the resume header
 			const headerHtml = `
 				<div class="mb-3">
 					<h1 class="mb-0">${escapeHtml(fullName || "Your Name")}</h1>
@@ -52,43 +62,39 @@
 					}
 				</div>
 			`
+			// Create the summary section
+			const summaryHtml = isQuillEmpty(quills.summary)
+				? ""
+				: sectionHtml("Summary", quills.summary.root.innerHTML)
 
-			const summaryHtml = isQuillEmpty(quills.summary) ? "" : sectionHtml("Summary", quills.summary.root.innerHTML)
-
+			// Create the cover letter section
 			const coverLetterHtml = isQuillEmpty(quills.coverLetter)
 				? ""
 				: sectionHtml("Cover Letter", quills.coverLetter.root.innerHTML)
 
-			let experienceHtml = ""
-			if (!isQuillEmpty(quills.experience)) {
-				const selectedBlocks = selectionState.options.experience.filter((o) => selectionState.experienceIds.has(o.id))
-				if (selectionState.options.experience.length && selectedBlocks.length === 0) {
-					experienceHtml = ""
-				} else if (selectedBlocks.length && selectedBlocks.length !== selectionState.options.experience.length) {
-					experienceHtml = sectionHtml("Experience", selectedBlocks.map((b) => b.html).join(""))
-				} else {
-					experienceHtml = sectionHtml("Experience", quills.experience.root.innerHTML)
-				}
-			}
+			const selectedExperience = (selectionState?.options?.experience || []).filter((item) =>
+				selectionState?.experienceIds?.has(item.id)
+			)
+			const experienceHtml = selectedExperience.length
+				? sectionHtml("Experience", selectedExperience.map((item) => item.html).join(""))
+				: ""
 
-			const educationHtml = isQuillEmpty(quills.education) ? "" : sectionHtml("Education", quills.education.root.innerHTML)
-			const projectsHtml = isQuillEmpty(quills.projects) ? "" : sectionHtml("Projects", quills.projects.root.innerHTML)
+			// Create education and projects sections
+			const educationHtml = isQuillEmpty(quills.education)
+				? ""
+				: sectionHtml("Education", quills.education.root.innerHTML)
+			const projectsHtml = isQuillEmpty(quills.projects)
+				? ""
+				: sectionHtml("Projects", quills.projects.root.innerHTML)
 
-			let skillsHtml = ""
-			if (!isQuillEmpty(quills.skills)) {
-				const selectedSkills = selectionState.options.skills.filter((o) => selectionState.skillIds.has(o.id))
-				if (selectionState.options.skills.length && selectedSkills.length === 0) {
-					skillsHtml = ""
-				} else if (selectedSkills.length && selectedSkills.length !== selectionState.options.skills.length) {
-					skillsHtml = sectionHtml(
-						"Skills",
-						`<ul>${selectedSkills.map((s) => `<li>${escapeHtml(s.label)}</li>`).join("")}</ul>`
-					)
-				} else {
-					skillsHtml = sectionHtml("Skills", quills.skills.root.innerHTML)
-				}
-			}
+			const selectedSkills = (selectionState?.options?.skills || []).filter((item) =>
+				selectionState?.skillIds?.has(item.id)
+			)
+			const skillsHtml = selectedSkills.length
+				? sectionHtml("Skills", `<ul>${selectedSkills.map((item) => `<li>${escapeHtml(item.label)}</li>`).join("")}</ul>`)
+				: ""
 
+			// Combine all the section html
 			previewEl.innerHTML = `${headerHtml}${coverLetterHtml}${summaryHtml}${experienceHtml}${educationHtml}${projectsHtml}${skillsHtml}`
 		}
 	}

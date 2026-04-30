@@ -1,3 +1,7 @@
+// **** [ Entire file written by me ] ****
+// Some helper functions for authentication.
+// Handles bcrypt and JWT
+
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 

@@ -1,3 +1,10 @@
+// **** [ Written ENTIRELY by AI] ****
+// Copilot suggested that I "sanitize" the Quill input since it supports rich text.
+// This prevents scripts, iframes, embeds, etc from being stored in the db. It also converts
+// common symbols like "&" or ">" to the html equivalents to avoid conflicts. Finally, it has
+// some helper functions for making the experience and skills sections selectable. 
+// Used copilot to fix it
+
 ;(function (global) {
 	global.ResumeApp = global.ResumeApp || {}
 	global.ResumeApp.utils = global.ResumeApp.utils || {}
@@ -11,6 +18,7 @@
 			.replaceAll("'", "&#039")
 	}
 
+	// Removes certain tags
 	function sanitizeHtml(html) {
 		const template = document.createElement("template")
 		template.innerHTML = String(html ?? "")

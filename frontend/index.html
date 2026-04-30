@@ -177,7 +177,10 @@
               <div class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
                   <div class="fw-semibold">Experience</div>
-                  <button class="btn btn-sm btn-primary" id="btnGenerateExperience">Enhance with AI</button>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" id="btnAddExperienceItem" type="button">+ Add Job</button>
+                    <button class="btn btn-sm btn-primary" id="btnGenerateExperience" type="button">Enhance with AI</button>
+                  </div>
                 </div>
                 <div id="experienceEditor" class="quill-editor"></div>
               </div>
@@ -201,7 +204,10 @@
               <div class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
                   <div class="fw-semibold">Skills</div>
-                  <button class="btn btn-sm btn-primary" id="btnGenerateSkills">Enhance with AI</button>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" id="btnAddSkillItem" type="button">+ Add Skill</button>
+                    <button class="btn btn-sm btn-primary" id="btnGenerateSkills" type="button">Enhance with AI</button>
+                  </div>
                 </div>
                 <div id="skillsEditor" class="quill-editor"></div>
               </div>
@@ -219,12 +225,11 @@
               <div class="mb-3">
                 <div class="fw-semibold mb-1">Preview Selection</div>
                 <div class="text-muted small mb-2">
-                  Pick which experience entries (jobs) and skills appear in the preview.
+                  Add jobs/skills with +, then check which ones appear in the preview.
                 </div>
 
                 <div class="mb-3">
                   <div class="fw-semibold">Jobs (Experience)</div>
-                  <div class="text-muted small mb-2">Tip: Use Heading 2/3 for each job title to separate entries.</div>
                   <div id="experienceSelection" class="border rounded p-2" style="max-height: 180px; overflow: auto;"></div>
                 </div>
 

@@ -3,7 +3,7 @@
 	global.ResumeApp.resumeBuilder = global.ResumeApp.resumeBuilder || {}
 
 	const API_BASE_URL = global.ResumeApp.API_BASE_URL
-	const { showErrorDialog } = global.ResumeApp.dialogs
+	const { showErrorDialog, showWarningDialog, showInfoDialog } = global.ResumeApp.dialogs
 	const { getGeminiApiKey, getJwtToken, getUsername, setGeminiApiKey } = global.ResumeApp.session
 	const { enhanceQuillAccessibility } = global.ResumeApp.quillA11y
 	const { isQuillEmpty, safeJsonParse, setQuillHtml } = global.ResumeApp.utils
@@ -20,7 +20,10 @@
 	let txtApiKey = null
 	let btnSave = null
 	let btnPrint = null
+	let btnAddExperienceItem = null
+	let btnAddSkillItem = null
 
+	// Available options for the quill inputs
 	const toolbarOptions = [
 		[{ header: [1, 2, 3, 4, 5, false] }],
 		["bold", "italic", "underline"],
@@ -38,6 +41,8 @@
 		coverLetter: "Cover Letter",
 	}
 
+	// [ Written entirely by me ]
+	// Disables all the generate buttons while the AI agent is working
 	function disableGenerateButtons() {
 		for (const btn of Object.values(generateButtons)) {
 			if (!btn) continue
@@ -46,6 +51,8 @@
 		}
 	}
 
+	// [ Written entirely by me ]
+	// Enable all the generate buttons
 	function enableGenerateButtons() {
 		for (const btn of Object.values(generateButtons)) {
 			if (!btn) continue
@@ -54,23 +61,19 @@
 		}
 	}
 
+	// [ Written entirely by me ]
+	// Calls the backend to get the AI suggestion for a given resume section
 	async function getSuggestion(section) {
-		disableGenerateButtons()
-
+		disableGenerateButtons() // Disable generate buttons to prevent multiple backend calls
+		
+		// Check if given resume section is empty and show warning dialog if so
 		if (isQuillEmpty(quills[section])) {
-			if (typeof Swal !== "undefined" && typeof Swal.fire === "function") {
-				Swal.fire({
-					title: "Input Required",
-					text: "Please enter some content in the section before requesting AI suggestions.",
-					icon: "warning",
-				})
-			} else {
-				alert("Please enter some content in the section before requesting AI suggestions.")
-			}
+			showWarningDialog("Input Required", "Please enter some content in the section before requesting AI suggestions.")
 			enableGenerateButtons()
 			return
 		}
 
+		// Construct backend request body: section we are asking about, gemini api key and section content
 		const body = {
 			section,
 			apiKey: getGeminiApiKey(),
@@ -78,11 +81,12 @@
 		}
 
 		try {
+			// Make request to backend
 			const response = await fetch(`${API_BASE_URL}/suggest/`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: `Bearer ${getJwtToken() || ""}`,
+					Authorization: `Bearer ${getJwtToken() || ""}`, // Attach JWT
 				},
 				body: JSON.stringify(body),
 			})
@@ -91,35 +95,38 @@
 				throw new Error(`HTTP error! status: ${response.status}`)
 			}
 
-			const result = await response.json()
+			const result = await response.json() // Store result
 			console.log("Suggestion retrieved successfully:", result)
-			enableGenerateButtons()
+			enableGenerateButtons() // Re-enable generate buttons
 
+			// Ensure sweetalert2 is loaded
 			if (typeof Swal === "undefined" || typeof Swal.fire !== "function") {
 				alert("AI suggestions are available, but SweetAlert2 is not loaded.")
 				return
 			}
 
+			// Create a custom sweetalert2 dialog that show the suggestion with quill input
 			Swal.fire({
 				title: "AI Suggestions",
-				html: "<div id='suggestion-content' class='quill-editor'></div>",
+				html: "<div id='divSuggestion' class='quill-editor'></div>",
 				icon: "info",
 				confirmButtonText: "Apply Suggestions",
 				width: "75%",
 				showCancelButton: true,
-				didOpen: () => {
-					const suggestionContainer = document.getElementById("suggestion-content")
+				didOpen: () => { // Load quill input once dialog appears
+					const suggestionContainer = document.getElementById("divSuggestion")
 					if (suggestionContainer) {
 						const tempQuill = new Quill(suggestionContainer, {
 							theme: "snow",
 							modules: { toolbar: false },
 							readOnly: true,
 						})
-						enhanceQuillAccessibility(tempQuill, { label: "AI suggestions", editorIdPrefix: "ai-suggestions" })
-						setQuillHtml(tempQuill, result.suggestion || "<p>No suggestions were generated. Please try again.</p>")
+						enhanceQuillAccessibility(tempQuill, { label: "AI suggestions", editorIdPrefix: "ai-suggestions" }) // Add aria labels to quill input
+						setQuillHtml(tempQuill, result.suggestion || "<p>No suggestions were generated. Please try again.</p>") // Put suggestion in quill input
 					}
 				},
 			}).then((swalResult) => {
+				// Check if user selects confirm and apply suggestion if so
 				if (swalResult.isConfirmed && result.suggestion) {
 					setQuillHtml(quills[section], result.suggestion)
 					renderPreview()
@@ -132,7 +139,10 @@
 		}
 	}
 
+	// [ Written entirely by me ]
+	// Calls the backend to get the resume data for the user based on their JWT
 	async function getResume() {
+		// Make request for resume data
 		try {
 			const response = await fetch(`${API_BASE_URL}/resume/`, {
 				method: "GET",
@@ -146,16 +156,17 @@
 				throw new Error(`HTTP error! status: ${response.status}`)
 			}
 
-			const data = await response.json()
+			const data = await response.json() // Store resume data
 			console.log("Resume data retrieved:", data)
+			selectionManager.resetSelections()
 
-			// Backend returns: { resume: { ...fields } }
-			const resume = data?.resume ?? null
+			const resume = data?.resume ?? null // Resume data is under the 'resume' key of json
 			if (!resume) {
 				console.log("No saved resume found for this user yet.")
 				return
 			}
 
+			// Set all the inputs with the resume data
 			inputs.fullName.value = resume.fullName || ""
 			inputs.headline.value = resume.headline || ""
 			inputs.email.value = resume.email || ""
@@ -163,31 +174,44 @@
 			inputs.location.value = resume.location || ""
 			inputs.website.value = resume.website || ""
 			setQuillHtml(quills.summary, resume.summary || "<p><br></p>")
-			setQuillHtml(quills.experience, resume.experience || "<p><br></p>")
+			setQuillHtml(quills.experience, "<p><br></p>")
 			setQuillHtml(quills.education, resume.education || "<p><br></p>")
 			setQuillHtml(quills.projects, resume.projects || "<p><br></p>")
-			setQuillHtml(quills.skills, resume.skills || "<p><br></p>")
+			setQuillHtml(quills.skills, "<p><br></p>")
 			setQuillHtml(quills.coverLetter, resume.coverLetter || "<p><br></p>")
 
+			// Get the experience and skills entries and their ids
+			const experienceItems = safeJsonParse(resume.experienceItems, null)
+			const skillItems = safeJsonParse(resume.skillItems, null)
+			const selectedExperienceIds = safeJsonParse(resume.selectedExperienceIds, null)
+			const selectedSkillIds = safeJsonParse(resume.selectedSkillIds, null)
+
+			// Update the selection manager
 			selectionManager.setLoadedSelections({
-				experienceLabels: safeJsonParse(resume.selectedExperienceJobs, null),
-				skillLabels: safeJsonParse(resume.selectedSkills, null),
+				experienceItems,
+				skillItems,
+				selectedExperienceIds,
+				selectedSkillIds,
 			})
 		} catch (error) {
 			showErrorDialog("Failed to load resume", "Please refresh the page and try again.", error)
 		}
 	}
 
+	// [ Written entirely by me ]
+	// Calls the backend to save the resume data
 	async function saveResume() {
 		console.log("Saving resume...")
 
-		const selectedExperienceLabels = selectionManager.selectionState.options.experience
-			.filter((o) => selectionManager.selectionState.experienceIds.has(o.id))
-			.map((o) => o.label)
-		const selectedSkillLabels = selectionManager.selectionState.options.skills
-			.filter((o) => selectionManager.selectionState.skillIds.has(o.id))
-			.map((o) => o.label)
+		// Get the skills and experience with their ids. Also the selected ones
+		const selectedExperienceIds = Array.from(selectionManager.selectionState.experienceIds)
+		const selectedSkillIds = Array.from(selectionManager.selectionState.skillIds)
+		const experienceItems = selectionManager.selectionState.options.experience
+		const skillItems = selectionManager.selectionState.options.skills
+		const allExperienceHtml = experienceItems.map((item) => item.html).join("")
+		const allSkillsHtml = skillItems.length ? `<ul>${skillItems.map((item) => `<li>${item.label}</li>`).join("")}</ul>`	: "<p><br></p>"
 
+		// Construct the "payload" of all the data
 		const resumeData = {
 			username: getUsername() || "unknown_user",
 			fullName: inputs.fullName.value,
@@ -197,15 +221,18 @@
 			location: inputs.location.value,
 			website: inputs.website.value,
 			summary: quills.summary.root.innerHTML,
-			experience: quills.experience.root.innerHTML,
+			experience: allExperienceHtml || "<p><br></p>",
 			education: quills.education.root.innerHTML,
 			projects: quills.projects.root.innerHTML,
-			skills: quills.skills.root.innerHTML,
+			skills: allSkillsHtml,
 			coverLetter: quills.coverLetter.root.innerHTML,
-			selectedExperienceJobs: selectedExperienceLabels,
-			selectedSkills: selectedSkillLabels,
+			experienceItems,
+			skillItems,
+			selectedExperienceIds,
+			selectedSkillIds,
 		}
 
+		// Make the request
 		try {
 			const response = await fetch(`${API_BASE_URL}/save/`, {
 				method: "POST",
@@ -227,9 +254,12 @@
 		}
 	}
 
+	// [ PARTIALLY written by me ]
+	// Initializes all the inputs/html on page load
 	function initOnce() {
 		if (initialized) return
 
+		// Object of all the basic info inputs
 		inputs = {
 			fullName: document.getElementById("fullName"),
 			headline: document.getElementById("headline"),
@@ -239,10 +269,14 @@
 			website: document.getElementById("website"),
 		}
 
+		// Resume section buttons and api key input
 		txtApiKey = document.querySelector("#txtApiKey")
 		btnSave = document.querySelector("#btnSave")
 		btnPrint = document.querySelector("#btnPrint")
+		btnAddExperienceItem = document.querySelector("#btnAddExperienceItem")
+		btnAddSkillItem = document.querySelector("#btnAddSkillItem")
 
+		// Object of all the generate buttosn for each section
 		generateButtons = {
 			summary: document.getElementById("btnGenerateSummary"),
 			experience: document.getElementById("btnGenerateExperience"),
@@ -252,11 +286,12 @@
 			coverLetter: document.getElementById("btnGenerateCoverLetter"),
 		}
 
+		// Check if Quill initialized
 		if (typeof Quill === "undefined") {
-			// Quill didn't load; nothing to initialize.
 			return
 		}
 
+		// Object of all the quill inputs
 		quills = {
 			summary: new Quill("#summaryEditor", {
 				theme: "snow",
@@ -290,10 +325,12 @@
 			}),
 		}
 
+		// Add the aria-* to each of the quill inputs
 		for (const [key, quill] of Object.entries(quills)) {
 			enhanceQuillAccessibility(quill, { label: quillSectionLabels[key] || key, editorIdPrefix: key })
 		}
 
+		// Create the manager for handling the selection of experiences/skills
 		selectionManager = createSelectionManager({
 			quills,
 			containers: {
@@ -303,8 +340,10 @@
 			renderPreview: () => renderPreview(),
 		})
 
+		// Create the resume previewer
 		renderPreview = createPreviewRenderer({ inputs, quills, selectionState: selectionManager.selectionState })
 
+		// Add click event listeners to all the ai generate buttons
 		generateButtons.summary?.addEventListener("click", () => getSuggestion("summary"))
 		generateButtons.experience?.addEventListener("click", () => getSuggestion("experience"))
 		generateButtons.education?.addEventListener("click", () => getSuggestion("education"))
@@ -312,26 +351,44 @@
 		generateButtons.skills?.addEventListener("click", () => getSuggestion("skills"))
 		generateButtons.coverLetter?.addEventListener("click", () => getSuggestion("coverLetter"))
 
+		// Add click event listener to save button
 		btnSave?.addEventListener("click", saveResume)
 
+		// Add click event listener to add job button
+		btnAddExperienceItem?.addEventListener("click", () => {
+			const didAdd = selectionManager.addExperienceFromEditor() // Add job to the preview
+			if (!didAdd) { // Check if it was added and if not, the quill input was empty
+				showInfoDialog("Nothing to add", "Type a job entry in Experience first, then click + Add Job.")
+			}
+		})
+
+		// Add click event listener to add skill button
+		btnAddSkillItem?.addEventListener("click", () => {
+			const didAdd = selectionManager.addSkillFromEditor() // Add job to the preview
+			if (!didAdd) { // Check if it was added and if not, the quill input was empty
+				showInfoDialog("Nothing to add", "Type a skill entry in Skills first, then click + Add Skill.")
+			}
+		})
+
+		// Ensure resume preview is rendered, the show print dialog
 		btnPrint?.addEventListener("click", () => {
 			renderPreview()
 			window.print()
 		})
 
+		// Store gemini api key
 		txtApiKey?.addEventListener("input", () => {
 			setGeminiApiKey(txtApiKey.value)
 		})
 
+		// Update preview after each key input on input
 		for (const input of Object.values(inputs)) {
 			input?.addEventListener("input", () => renderPreview())
 		}
 
+		// Update preview after each key input on quill input
 		for (const [key, quill] of Object.entries(quills)) {
 			quill.on("text-change", () => {
-				if (key === "experience" || key === "skills") {
-					selectionManager.syncSelectionsFromContent()
-				}
 				renderPreview()
 			})
 		}
@@ -339,9 +396,10 @@
 		initialized = true
 	}
 
+	// [ Written entirely by me ]
+	// Clears all input data when user logs out
 	function clearInputs() {
 		if (!inputs) {
-			// Not initialized yet; nothing to clear.
 			return
 		}
 		inputs.fullName.value = ""
@@ -358,15 +416,17 @@
 		selectionManager?.resetSelections()
 	}
 
+	// [ Written entirely by me ]
+	// Renders the page
 	async function renderPage() {
-		initOnce()
+		initOnce() // Build the page
 		if (!quills) return
 
-		if (txtApiKey) txtApiKey.value = getGeminiApiKey() || ""
+		if (txtApiKey) txtApiKey.value = getGeminiApiKey() || "" // Fill in gemini api key if it exists
 
-		await getResume()
-		selectionManager.syncSelectionsFromContent({ initialLoad: true })
-		renderPreview()
+		await getResume() // Get users resume
+		selectionManager.syncSelectionsFromContent({ initialLoad: true }) // Update selections based on fetched resume
+		renderPreview() // Show preivew
 	}
 
 	global.ResumeApp.resumeBuilder.renderPage = renderPage

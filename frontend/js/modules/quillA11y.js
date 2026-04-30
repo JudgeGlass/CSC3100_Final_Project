@@ -1,3 +1,8 @@
+// **** [ Written ENTIRELY by AI] ****
+// The Quill library does not have very good accessability for the option buttons in the Quill inputs.
+// This function adds the aria-* tags to all the Quill option buttons
+// Used copilot to fix it and improve the accessability score.
+
 ;(function (global) {
 	global.ResumeApp = global.ResumeApp || {}
 	global.ResumeApp.quillA11y = global.ResumeApp.quillA11y || {}
