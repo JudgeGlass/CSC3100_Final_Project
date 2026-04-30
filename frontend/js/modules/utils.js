@@ -9,6 +9,7 @@
 	global.ResumeApp = global.ResumeApp || {}
 	global.ResumeApp.utils = global.ResumeApp.utils || {}
 
+	// Replaces certain symbols with HTML escape sequences to avoid conflicts
 	function escapeHtml(text) {
 		return String(text)
 			.replaceAll("&", "&amp")
@@ -18,7 +19,7 @@
 			.replaceAll("'", "&#039")
 	}
 
-	// Removes certain tags
+	// Removes certain "hazardous" tags from being rendered/stored in the db
 	function sanitizeHtml(html) {
 		const template = document.createElement("template")
 		template.innerHTML = String(html ?? "")
@@ -51,6 +52,7 @@
 		return template.innerHTML
 	}
 
+	// Puts 'https://' in front of URLs if it doesn't have it already
 	function normalizeUrl(url) {
 		const raw = String(url ?? "").trim()
 		if (!raw) return ""
@@ -58,10 +60,12 @@
 		return `https://${raw}`
 	}
 
+	// Check if Quill input is empty or not
 	function isQuillEmpty(quill) {
 		return quill.getText().trim().length === 0
 	}
 
+	// Ensures the given 'value' is valid json and returns a 'fallback' if not (I have it set to null for everything)
 	function safeJsonParse(value, fallback) {
 		try {
 			if (value == null) return fallback
@@ -73,6 +77,7 @@
 		}
 	}
 
+	// Remove extra spacing from text
 	function normalizeText(text) {
 		return String(text ?? "")
 			.replace(/\s+/g, " ")
@@ -93,12 +98,14 @@
 		return `${prefix}_${stableHash(`${label}|${extra}`)}`
 	}
 
+	// Set the quill input content html. Have to use clipboard convert for it to render html correctly.
 	function setQuillHtml(quill, html) {
 		const safeHtml = sanitizeHtml(html)
 		const delta = quill.clipboard.convert(safeHtml)
 		quill.setContents(delta, "silent")
 	}
 
+	// Creates a "root" html node called <template> for the given html so it can be parsed and sanitized
 	function htmlToTemplate(html) {
 		const template = document.createElement("template")
 		template.innerHTML = sanitizeHtml(html)
