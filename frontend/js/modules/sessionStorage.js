@@ -1,8 +1,10 @@
 // [ Written entirely by me ]
 // Some basic helper functions to store things in session storage
+
+// Immediately Invoked Function Expression to create a module for session management. global in this case is the window object.
 ;(function (global) {
-	global.ResumeApp = global.ResumeApp || {}
-	global.ResumeApp.session = global.ResumeApp.session || {}
+	global.ResumeApp = global.ResumeApp || {} // Create the ResumeApp namespace if it doesn't exist
+	global.ResumeApp.session = global.ResumeApp.session || {} // Create the session namespace if it doesn't exist
 
 	const TOKEN_KEY = "jwtToken"
 	const USERNAME_KEY = "username"
@@ -47,6 +49,7 @@
 		clearUsername()
 	}
 
+	// Expose the session functions to the global ResumeApp.session namespace
 	global.ResumeApp.session.getJwtToken = getJwtToken
 	global.ResumeApp.session.setJwtToken = setJwtToken
 	global.ResumeApp.session.clearJwtToken = clearJwtToken

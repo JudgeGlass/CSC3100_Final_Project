@@ -6,9 +6,10 @@
 // some helper functions for making the experience and skills sections selectable. 
 // Used copilot to fix it
 
+// Immediately Invoked Function Expression to create a module for general utility functions. global in this case is the window object.
 ;(function (global) {
-	global.ResumeApp = global.ResumeApp || {}
-	global.ResumeApp.utils = global.ResumeApp.utils || {}
+	global.ResumeApp = global.ResumeApp || {} // Create the ResumeApp namespace if it doesn't exist
+	global.ResumeApp.utils = global.ResumeApp.utils || {} // Create the utils namespace if it doesn't exist
 
 	// Replaces certain symbols with HTML escape sequences to avoid conflicts
 	function escapeHtml(text) {
@@ -114,6 +115,7 @@
 		return template
 	}
 
+	// Expose the utility functions to the global ResumeApp.utils namespace
 	global.ResumeApp.utils.escapeHtml = escapeHtml
 	global.ResumeApp.utils.sanitizeHtml = sanitizeHtml
 	global.ResumeApp.utils.normalizeUrl = normalizeUrl

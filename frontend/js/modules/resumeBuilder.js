@@ -1,6 +1,7 @@
+// Immediately Invoked Function Expression to create a module for the resume builder logic. global in this case is the window object.
 ;(function (global) {
-	global.ResumeApp = global.ResumeApp || {}
-	global.ResumeApp.resumeBuilder = global.ResumeApp.resumeBuilder || {}
+	global.ResumeApp = global.ResumeApp || {} // Create the ResumeApp namespace if it doesn't exist
+	global.ResumeApp.resumeBuilder = global.ResumeApp.resumeBuilder || {} // Create the resumeBuilder namespace if it doesn't exist
 
 	const API_BASE_URL = global.ResumeApp.API_BASE_URL
 	const { showErrorDialog, showWarningDialog, showInfoDialog } = global.ResumeApp.dialogs
@@ -429,6 +430,6 @@
 		renderPreview() // Show preivew
 	}
 
-	global.ResumeApp.resumeBuilder.renderPage = renderPage
-	global.ResumeApp.resumeBuilder.clearInputs = clearInputs
+	global.ResumeApp.resumeBuilder.renderPage = renderPage // Expose the renderPage function to the global ResumeApp.resumeBuilder namespace
+	global.ResumeApp.resumeBuilder.clearInputs = clearInputs // Expose the clearInputs function to the global ResumeApp.resumeBuilder namespace
 })(window)

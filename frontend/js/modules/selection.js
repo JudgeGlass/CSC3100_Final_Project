@@ -5,6 +5,8 @@
 // checkboxs at the bottom of the page to select.
 // Written by Copilot
 
+
+// Immediately Invoked Function Expression to create a module for selection management. global in this case is the window object.
 ;(function (global) {
 	// Selection manager for handling explicit user-added Experience (jobs)
 	// and Skills entries. Users add entries via the editor (+ buttons) and
@@ -12,8 +14,8 @@
 	// This file exposes a factory `createSelectionManager` on
 	// `global.ResumeApp.selection` that the app uses to manage selection state.
 
-	global.ResumeApp = global.ResumeApp || {}
-	global.ResumeApp.selection = global.ResumeApp.selection || {}
+	global.ResumeApp = global.ResumeApp || {} // Create the ResumeApp namespace if it doesn't exist
+	global.ResumeApp.selection = global.ResumeApp.selection || {} // Create the selection namespace if it doesn't exist
 
 	// Utilities used for parsing and stable id generation.
 	const { htmlToTemplate, normalizeText, optionId, isQuillEmpty } = global.ResumeApp.utils
@@ -280,5 +282,5 @@
 		}
 	}
 
-	global.ResumeApp.selection.createSelectionManager = createSelectionManager
+	global.ResumeApp.selection.createSelectionManager = createSelectionManager // Expose the createSelectionManager function to the global ResumeApp.selection namespace
 })(window)

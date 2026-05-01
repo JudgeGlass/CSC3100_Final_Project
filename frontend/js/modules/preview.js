@@ -1,8 +1,10 @@
 // [ PARTIALLY written by me ]
 // Functions that handle the preivew of the resume
+
+// Immediately Invoked Function Expression to create a module for resume preview logic. global in this case is the window object.
 ;(function (global) {
-	global.ResumeApp = global.ResumeApp || {}
-	global.ResumeApp.preview = global.ResumeApp.preview || {}
+	global.ResumeApp = global.ResumeApp || {} // Create the ResumeApp namespace if it doesn't exist
+	global.ResumeApp.preview = global.ResumeApp.preview || {} // Create the preview namespace if it doesn't exist
 
 	// Get html sanitizer helpers from the utils module
 	const { escapeHtml, isQuillEmpty, normalizeUrl, sanitizeHtml } = global.ResumeApp.utils
@@ -90,5 +92,5 @@
 		}
 	}
 
-	global.ResumeApp.preview.createPreviewRenderer = createPreviewRenderer
+	global.ResumeApp.preview.createPreviewRenderer = createPreviewRenderer // Expose the createPreviewRenderer function to the global ResumeApp.preview namespace
 })(window)

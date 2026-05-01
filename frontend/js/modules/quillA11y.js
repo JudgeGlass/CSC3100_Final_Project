@@ -3,9 +3,10 @@
 // This function adds the aria-* tags to all the Quill option buttons
 // Used copilot to fix it and improve the accessability score.
 
+// Immediately Invoked Function Expression to create a module for Quill accessibility enhancements. global in this case is the window object.
 ;(function (global) {
-	global.ResumeApp = global.ResumeApp || {}
-	global.ResumeApp.quillA11y = global.ResumeApp.quillA11y || {}
+	global.ResumeApp = global.ResumeApp || {} // Create the ResumeApp namespace if it doesn't exist
+	global.ResumeApp.quillA11y = global.ResumeApp.quillA11y || {} // Create the quillA11y namespace if it doesn't exist
 
 	function enhanceQuillAccessibility(quill, { label, editorIdPrefix } = {}) {
 		if (!quill) return
@@ -65,5 +66,5 @@
 		setSelectA11y("select.ql-header", "Heading level")
 	}
 
-	global.ResumeApp.quillA11y.enhanceQuillAccessibility = enhanceQuillAccessibility
+	global.ResumeApp.quillA11y.enhanceQuillAccessibility = enhanceQuillAccessibility // Expose the enhanceQuillAccessibility function to the global ResumeApp.quillA11y namespace
 })(window)

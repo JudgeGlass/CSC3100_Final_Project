@@ -1,6 +1,8 @@
+
+// Immediately Invoked Function Expression to create a module for authentication logic. global in this case is the window object.
 ;(function (global) {
-	global.ResumeApp = global.ResumeApp || {}
-	global.ResumeApp.auth = global.ResumeApp.auth || {}
+	global.ResumeApp = global.ResumeApp || {} // Create the ResumeApp namespace if it doesn't exist
+	global.ResumeApp.auth = global.ResumeApp.auth || {} // Create the auth namespace if it doesn't exist
 
 	const API_BASE_URL = global.ResumeApp.API_BASE_URL
 	const { showErrorDialog, showSuccessDialog, showWarningDialog } = global.ResumeApp.dialogs
@@ -205,5 +207,5 @@
 		}
 	}
 
-	global.ResumeApp.auth.initAuth = initAuth
+	global.ResumeApp.auth.initAuth = initAuth // Expose the initAuth function to the global ResumeApp.auth namespace
 })(window)

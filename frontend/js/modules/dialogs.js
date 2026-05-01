@@ -1,8 +1,11 @@
 // [ Written entirely by me ]
 // Some helper functions to show sweetalert2 dialogs
+
+// Immediately Invoked Function Expression. global in this case is the window object.
+// Used to create a module like pattern.
 ;(function (global) {
-	global.ResumeApp = global.ResumeApp || {}
-	global.ResumeApp.dialogs = global.ResumeApp.dialogs || {}
+	global.ResumeApp = global.ResumeApp || {} // Create the ResumeApp namespace if it doesn't exist
+	global.ResumeApp.dialogs = global.ResumeApp.dialogs || {} // Create the dialogs namespace if it doesn't exist
 
 	function showDialog({ title, text, icon } = {}) {
 		// Check if the sweetalert2 librarly loaded properly
@@ -34,6 +37,7 @@
 		return showDialog({title: title || "Info", text: text || "", icon: "info"})
 	}
 
+	// Expose the dialog functions to the global ResumeApp.dialogs namespace
 	global.ResumeApp.dialogs.showDialog = showDialog
 	global.ResumeApp.dialogs.showInfoDialog = showInfoDialog
 	global.ResumeApp.dialogs.showErrorDialog = showErrorDialog
