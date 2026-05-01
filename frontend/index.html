@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache">
+
+  <link rel="icon" type="image/x-icon" href="./img/favicon.png">
+  <link rel="apple-touch-icon" href="./img/resume-icon.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="./img/resume-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="./img/resume-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="./img/resume-icon-144x144.png">
+
   <title>Resume Builder</title>
 
   <link
@@ -92,6 +99,7 @@
           <button type="button" class="btn btn-primary w-100" id="btnLogin">Login</button>
           <button type="button" class="btn btn-secondary w-100 mt-2" id="btnRegister">Register</button>
         </form>
+        <p class="mt-2 text-center">This application uses the following libraries: Bootstrap, Quill, SweetAlert2, Express, SQLite3</p>
     </div>
   </div>
   <div id="divRegister" class="hidden">
@@ -110,6 +118,7 @@
           <button type="button" class="btn btn-primary w-100" id="btnRegisterSubmit">Register</button>
           <button type="button" class="btn btn-secondary w-100 mt-2" id="btnBackToLogin">Back to Login</button>
         </form>
+        <p class="mt-2 text-center">This application uses the following libraries: Bootstrap, Quill, SweetAlert2, Express, SQLite3</p>
       </div>
     </div>
   </div>
@@ -117,6 +126,7 @@
     <div class="container-fluid py-3">
       <div class="row align-items-center mb-3 no-print">
         <div class="d-flex justify-content-between">
+          <img src="img/resume-icon.png" alt="Resume Icon" width="60" height="60" class="me-2" />
           <div class="col">
             <h1 class="h3 mb-0">Resume Builder</h1>
             <div class="text-muted">Fill in your details and edit sections with rich text. The preview updates as you type.</div>
@@ -169,7 +179,10 @@
               <div class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
                   <div class="fw-semibold">Summary</div>
-                  <button class="btn btn-sm btn-primary" id="btnGenerateSummary">Enhance with AI</button>
+                  <button class="btn btn-sm btn-outline-secondary" id="btnGenerateSummary">
+                    <img src="img/clippy.png" alt="clippy Icon" width="32" height="32" class="me-2">
+                    Enhance with AI
+                  </button>
                 </div>
                 <div id="summaryEditor" class="quill-editor"></div>
               </div>
@@ -179,7 +192,10 @@
                   <div class="fw-semibold">Experience</div>
                   <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-outline-primary" id="btnAddExperienceItem" type="button">+ Add Job</button>
-                    <button class="btn btn-sm btn-primary" id="btnGenerateExperience" type="button">Enhance with AI</button>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnGenerateExperience">
+                      <img src="img/clippy.png" alt="clippy Icon" width="32" height="32" class="me-2">
+                      Enhance with AI
+                    </button>
                   </div>
                 </div>
                 <div id="experienceEditor" class="quill-editor"></div>
@@ -188,7 +204,10 @@
               <div class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
                   <div class="fw-semibold">Education</div>
-                  <button class="btn btn-sm btn-primary" id="btnGenerateEducation">Enhance with AI</button>
+                  <button class="btn btn-sm btn-outline-secondary" id="btnGenerateEducation">
+                      <img src="img/clippy.png" alt="clippy Icon" width="32" height="32" class="me-2">
+                      Enhance with AI
+                  </button>
                 </div>
                 <div id="educationEditor" class="quill-editor"></div>
               </div>
@@ -196,7 +215,10 @@
               <div class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
                   <div class="fw-semibold">Projects</div>
-                  <button class="btn btn-sm btn-primary" id="btnGenerateProjects">Enhance with AI</button>
+                  <button class="btn btn-sm btn-outline-secondary" id="btnGenerateProjects">
+                      <img src="img/clippy.png" alt="clippy Icon" width="32" height="32" class="me-2">
+                      Enhance with AI
+                  </button>
                 </div>
                 <div id="projectsEditor" class="quill-editor"></div>
               </div>
@@ -206,7 +228,10 @@
                   <div class="fw-semibold">Skills</div>
                   <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-outline-primary" id="btnAddSkillItem" type="button">+ Add Skill</button>
-                    <button class="btn btn-sm btn-primary" id="btnGenerateSkills" type="button">Enhance with AI</button>
+                    <button class="btn btn-sm btn-outline-secondary" id="btnGenerateSkills" type="button">
+                      <img src="img/clippy.png" alt="clippy Icon" width="32" height="32" class="me-2">
+                        Enhance with AI
+                    </button>
                   </div>
                 </div>
                 <div id="skillsEditor" class="quill-editor"></div>
@@ -215,7 +240,10 @@
               <div class="mb-3">
                 <div class="d-flex justify-content-between mb-1">
                   <div class="fw-semibold">Cover Letter</div>
-                  <button class="btn btn-sm btn-primary" id="btnGenerateCoverLetter">Enhance with AI</button>
+                  <button class="btn btn-sm btn-outline-secondary" id="btnGenerateCoverLetter" type="button">
+                    <img src="img/clippy.png" alt="clippy Icon" width="32" height="32" class="me-2">
+                      Enhance with AI
+                  </button>
                 </div>
                 <div id="coverLetterEditor" class="quill-editor"></div>
               </div>
@@ -264,6 +292,7 @@
         </div>
       </div>
     </div>
+    <p class="mt-2 text-center">This application uses the following libraries: Bootstrap, Quill, SweetAlert2, Express, SQLite3</p>
   </div>
 
   <script src="libs/bootstrap.bundle.min.js"></script>

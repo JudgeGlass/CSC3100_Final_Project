@@ -197,7 +197,7 @@
 			;(async () => {
 				try {
 					showMain(divLogin, divRegister, divMain)
-					await onLoggedIn?.()
+					await onLoggedIn?.() // Invoke whatever login function, if given
 				} catch (error) {
 					showErrorDialog("Session expired", "Please log in again.", error)
 					clearAuthSession()
