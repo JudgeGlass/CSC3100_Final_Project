@@ -81,8 +81,6 @@
 			const educationHtml = isQuillEmpty(quills.education) ? ""	: sectionHtml("Education", quills.education.root.innerHTML)
 			const projectsHtml = isQuillEmpty(quills.projects) ? "" : sectionHtml("Projects", quills.projects.root.innerHTML)
 
-			console.log("WTH IS THIS: ", selectionState?.options?.skills)
-			console.log("Then this?: ", selectionState?.skillIds)
 			// Filters the array "skills" to whatever ID is in the Set "skillIds"
 			const selectedSkills = (selectionState?.options?.skills || []).filter((item) =>	selectionState?.skillIds?.has(item.id))
 			const skillsHtml = selectedSkills.length ? sectionHtml("Skills", `<ul>${selectedSkills.map((item) => `<li>${escapeHtml(item.label)}</li>`).join("")}</ul>`) : ""
