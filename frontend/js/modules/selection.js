@@ -1,4 +1,5 @@
 // **** [ Written ENTIRELY by AI] ****
+// I've put comments explaining (hopefully) what everything does (This is a little overcomplicated, but works)
 // This file handles the selection of experiences and skills to be added to the resume.
 // This creates a selectionManager that handles assigning IDs to each skill/experience and creating
 // checkboxs at the bottom of the page to select.
@@ -90,9 +91,10 @@
 
 	// Takes in the experience items, skill items, and instantiates the state.
 	// Handles everything related to the selection of the job/skills
+	// This is a factory-like data structure
 	function createSelectionManager({ quills, containers, renderPreview }) {
 
-		// Holds all the items
+		// Holds all the items recieved the by backend DB
 		const loadedSelections = {
 			experienceItems: null,
 			skillItems: null,
@@ -127,7 +129,11 @@
 			selectionState.options.skills = []
 		}
 
+		// Whenever we get the resume data on initial page load, we save the experiences/skills to loadedSelections.*, then remap it to the selectionState.*
+		// By remap, it recreates all the unique IDs and selected Sets the user saved to the DB
 		function hydrateFromLoadedSelections() {
+
+			// If the experienceItems we received from the DB is a valid array and our selectionState is empty, then add each experienceItem to the selectionState.option.experience (this recreates the ID)
 			if (selectionState.options.experience.length === 0 && Array.isArray(loadedSelections.experienceItems)) {
 				selectionState.options.experience = loadedSelections.experienceItems
 					.map((item, index) => {
@@ -140,6 +146,7 @@
 					.filter(Boolean)
 			}
 
+			// Same as the if statement above this one, but for the skills data
 			if (selectionState.options.skills.length === 0 && Array.isArray(loadedSelections.skillItems)) {
 				selectionState.options.skills = loadedSelections.skillItems
 					.map((item, index) => {
@@ -152,6 +159,7 @@
 					.filter(Boolean)
 			}
 
+			// Map the saved selected experiences to selectionState.experienceIds to preserve it
 			if (selectionState.experienceIds.size === 0) {
 				if (Array.isArray(loadedSelections.selectedExperienceIds) && loadedSelections.selectedExperienceIds.length) {
 					const allowed = new Set(selectionState.options.experience.map((item) => item.id))
@@ -161,6 +169,7 @@
 				}
 			}
 
+			// Same as previous if statement, but for the selected skills
 			if (selectionState.skillIds.size === 0) {
 				if (Array.isArray(loadedSelections.selectedSkillIds) && loadedSelections.selectedSkillIds.length) {
 					const allowed = new Set(selectionState.options.skills.map((item) => item.id))
@@ -171,25 +180,28 @@
 			}
 		}
 
+		// This renders the checkbox list of selectable skills and experiences.
+		// Also handles the deletion of any of skill/experience and the logic on if it should be rendered in the preview or not
 		function renderSelections() {
 			renderSelectionList(
 				containers.experience,
 				selectionState.options.experience,
 				selectionState.experienceIds,
-				(id, checked) => {
-					if (checked) selectionState.experienceIds.add(id)
-					else selectionState.experienceIds.delete(id)
-					renderPreview()
+				(id, checked) => { // This is the onChange functions whenever the checkbox get's selected
+					if (checked) selectionState.experienceIds.add(id) // We aadd the ID of the experience entry to the experienceIds set if checked
+					else selectionState.experienceIds.delete(id) // Otherwise, remove it from the Set
+					renderPreview() // Then show the resume preview
 				},
 				"No jobs added yet. Use the + button in Experience.",
-				(id) => {
-					selectionState.options.experience = selectionState.options.experience.filter((item) => item.id !== id)
-					selectionState.experienceIds.delete(id)
-					renderSelections()
-					renderPreview()
+				(id) => { // onDelete(), handles the delete button next to the checkbox to delete the experience
+					selectionState.options.experience = selectionState.options.experience.filter((item) => item.id !== id) // Filter out the ID we are deleting and set it as the new experience(s) array
+					selectionState.experienceIds.delete(id) // Remove the experience from the ID set
+					renderSelections() // Render this function again to make a new checkbox list
+					renderPreview() // Then show the resume preview
 				}
 			)
 
+			// This does the exact same thing as the part above, just handling the "skills" sections instead
 			renderSelectionList(
 				containers.skills,
 				selectionState.options.skills,
@@ -199,24 +211,32 @@
 					else selectionState.skillIds.delete(id)
 					renderPreview()
 				},
-				"No skills added yet. Use the + button in Skills."
+				"No skills added yet. Use the + button in Skills.",
+				(id) => { // onDelete(), handles the delete button next to the checkbox to delete the experience
+					selectionState.options.skills = selectionState.options.skills.filter((item) => item.id !== id) // Filter out the ID we are deleting and set it as the new experience(s) array
+					selectionState.skillIds.delete(id) // Remove the experience from the ID set
+					renderSelections() // Render this function again to make a new checkbox list
+					renderPreview() // Then show the resume preview
+				}
 			)
 		}
 
+		// This takes the HTML content of the experience Quill input and adds it to the selectionState.options.experience array
 		function addExperienceFromEditor() {
-			if (isQuillEmpty(quills.experience)) return false
-			const html = quills.experience.root.innerHTML
-			const label = buildExperienceLabel(html, selectionState.options.experience.length + 1)
-			const id = optionId("job", label, `${Date.now()}|${html}`)
+			if (isQuillEmpty(quills.experience)) return false // Check if input is empty or not
+			const html = quills.experience.root.innerHTML // Get Quill input content
+			const label = buildExperienceLabel(html, selectionState.options.experience.length + 1) // Create the checkbox label, using the array length + 1 as the label if buildExperienceLabel can't figure out the label text
+			const id = optionId("job", label, `${Date.now()}|${html}`) // Creates a unique ID for the experience
 
-			selectionState.options.experience.push({ id, label, html })
-			selectionState.experienceIds.add(id)
-			quills.experience.setContents([{ insert: "\n" }], "silent")
-			renderSelections()
-			renderPreview()
-			return true
+			selectionState.options.experience.push({ id, label, html }) // Put the id, label, and html content in the array
+			selectionState.experienceIds.add(id) // Add the id to the selected ID set (New entries are selected by default)
+			quills.experience.setContents([{ insert: "\n" }], "silent") // Clear the experience input Quill
+			renderSelections() // Render the new select checkbox list
+			renderPreview() // Render the preivew
+			return true // Return true if a new entry was created successfully 
 		}
 
+		// This does the same thing as addExperienceFromEditor()^, but for skills instead
 		function addSkillFromEditor() {
 			if (isQuillEmpty(quills.skills)) return false
 			const html = quills.skills.root.innerHTML
@@ -232,15 +252,16 @@
 			return true
 		}
 
+		// This function renders whatever experiences/skills the user had saved previously on their resume
+		// This is only called on initial page load
 		function syncSelectionsFromContent({ initialLoad = false } = {}) {
-			if (initialLoad) {
+			if (initialLoad) { // Create the initial selection checkbox list at the bottom of page
 				hydrateFromLoadedSelections()
 			}
 
-			const experienceOptionIds = new Set(selectionState.options.experience.map((item) => item.id))
-			selectionState.experienceIds = new Set(
-				[...selectionState.experienceIds].filter((id) => experienceOptionIds.has(id))
-			)
+			// We have to "re-sync" the arrays since we set these after getting the resume and the user might have have what should be selected
+			const experienceOptionIds = new Set(selectionState.options.experience.map((item) => item.id)) // Get Set of all experience entry IDs
+			selectionState.experienceIds = new Set([...selectionState.experienceIds].filter((id) => experienceOptionIds.has(id))) // Refilter the experience(s) array
 
 			const skillOptionIds = new Set(selectionState.options.skills.map((item) => item.id))
 			selectionState.skillIds = new Set([...selectionState.skillIds].filter((id) => skillOptionIds.has(id)))

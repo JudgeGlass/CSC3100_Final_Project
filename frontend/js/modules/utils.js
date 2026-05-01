@@ -1,4 +1,5 @@
 // **** [ Written ENTIRELY by AI] ****
+// I've put comments explaining (hopefully) what everything does
 // Copilot suggested that I "sanitize" the Quill input since it supports rich text.
 // This prevents scripts, iframes, embeds, etc from being stored in the db. It also converts
 // common symbols like "&" or ">" to the html equivalents to avoid conflicts. Finally, it has
@@ -84,6 +85,7 @@
 			.trim()
 	}
 
+	// Used for the selection logic. Creates a unique ID for a given string
 	function stableHash(input) {
 		// djb2
 		let hash = 5381

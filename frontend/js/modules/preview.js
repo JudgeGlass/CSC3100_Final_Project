@@ -72,27 +72,18 @@
 				? ""
 				: sectionHtml("Cover Letter", quills.coverLetter.root.innerHTML)
 
-			const selectedExperience = (selectionState?.options?.experience || []).filter((item) =>
-				selectionState?.experienceIds?.has(item.id)
-			)
-			const experienceHtml = selectedExperience.length
-				? sectionHtml("Experience", selectedExperience.map((item) => item.html).join(""))
-				: ""
+			const selectedExperience = (selectionState?.options?.experience || []).filter((item) =>	selectionState?.experienceIds?.has(item.id))
+			const experienceHtml = selectedExperience.length ? sectionHtml("Experience", selectedExperience.map((item) => item.html).join("")) : ""
 
 			// Create education and projects sections
-			const educationHtml = isQuillEmpty(quills.education)
-				? ""
-				: sectionHtml("Education", quills.education.root.innerHTML)
-			const projectsHtml = isQuillEmpty(quills.projects)
-				? ""
-				: sectionHtml("Projects", quills.projects.root.innerHTML)
+			const educationHtml = isQuillEmpty(quills.education) ? ""	: sectionHtml("Education", quills.education.root.innerHTML)
+			const projectsHtml = isQuillEmpty(quills.projects) ? "" : sectionHtml("Projects", quills.projects.root.innerHTML)
 
-			const selectedSkills = (selectionState?.options?.skills || []).filter((item) =>
-				selectionState?.skillIds?.has(item.id)
-			)
-			const skillsHtml = selectedSkills.length
-				? sectionHtml("Skills", `<ul>${selectedSkills.map((item) => `<li>${escapeHtml(item.label)}</li>`).join("")}</ul>`)
-				: ""
+			console.log("WTH IS THIS: ", selectionState?.options?.skills)
+			console.log("Then this?: ", selectionState?.skillIds)
+			// Filters the array "skills" to whatever ID is in the Set "skillIds"
+			const selectedSkills = (selectionState?.options?.skills || []).filter((item) =>	selectionState?.skillIds?.has(item.id))
+			const skillsHtml = selectedSkills.length ? sectionHtml("Skills", `<ul>${selectedSkills.map((item) => `<li>${escapeHtml(item.label)}</li>`).join("")}</ul>`) : ""
 
 			// Combine all the section html
 			previewEl.innerHTML = `${headerHtml}${coverLetterHtml}${summaryHtml}${experienceHtml}${educationHtml}${projectsHtml}${skillsHtml}`
